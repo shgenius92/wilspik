@@ -21,7 +21,7 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">Learn v5 English by practice</h1>
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">Learn v6 English by practice</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Overall Progress */}
