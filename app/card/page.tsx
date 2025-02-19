@@ -7,6 +7,7 @@ import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon } from "@heroicons/reac
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Header } from "@/components/Header"
 
 const guideSteps: GuideStep[] = [
   { target: "englishWord", content: "This is the English word you're learning.", placement: "bottom" },
@@ -71,8 +72,6 @@ export default function CardPage() {
   }
 
   const nextCard = async () => {
-
-    alert('nextCard: ');
     await fetchRandomCard(seenCards, currentBucketVar);
     setIsBlurred(true);
 
@@ -108,7 +107,6 @@ export default function CardPage() {
         body: JSON.stringify({ seenCardIds: [...seenCards], currentBucket: currentBucket }),
       });
       const data = await response.json();
-      alert('data: ', data);
       console.log('fetchRandomCard: data: ', data);
 
       if (data.message === 'All cards read!') {
@@ -159,6 +157,7 @@ export default function CardPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative">
 
+      <Header />
       {showGuide && <div className="absolute inset-0 bg-gray-900 bg-opacity-50 z-40 pointer-events-none" />}
       <Card className="w-full max-w-sm relative">
         <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
