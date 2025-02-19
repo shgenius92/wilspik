@@ -71,6 +71,8 @@ export default function CardPage() {
   }
 
   const nextCard = async () => {
+
+    alert('nextCard: ');
     await fetchRandomCard(seenCards, currentBucketVar);
     setIsBlurred(true);
 
