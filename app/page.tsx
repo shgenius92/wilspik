@@ -67,7 +67,7 @@ export default async function HomePage() {
             </Card>
           </Link>
 
-          {/* Pronunciation Tip */}
+          {/* Pronunciation Tip
           <Card className="border-t-4 border-purple-500 col-span-full">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
@@ -81,7 +81,7 @@ export default async function HomePage() {
               </p>
               <p className="text-sm text-gray-600">{pronunciationTip.explanation}</p>
             </CardContent>
-          </Card>
+          </Card>*/}
 
           {/* Revision */}
           <Link href="/revision" className="block">
@@ -99,7 +99,7 @@ export default async function HomePage() {
             </Card>
           </Link>
 
-          {/* All Buckets */}
+          {/* All Buckets
           <Link href="/buckets" className="block">
             <Card className="hover:shadow-lg transition-shadow border-t-4 border-blue-500 h-full">
               <CardHeader>
@@ -113,7 +113,7 @@ export default async function HomePage() {
                 <p className="text-sm text-gray-600">{userProgress.totalBuckets} total buckets available</p>
               </CardContent>
             </Card>
-          </Link>
+          </Link>*/}
         </div>
       </main>
     </div>
