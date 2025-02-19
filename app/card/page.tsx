@@ -106,7 +106,7 @@ export default function CardPage() {
         body: JSON.stringify({ seenCardIds: [...seenCards], currentBucket: currentBucket }),
       });
       const data = await response.json();
-
+      alert('data: ', data);
       console.log('fetchRandomCard: data: ', data);
 
       if (data.message === 'All cards read!') {
