@@ -4,6 +4,7 @@ import { AcademicCapIcon, PlayIcon, ArrowPathIcon, BookOpenIcon, SpeakerWaveIcon
 import Link from "next/link"
 import { getUserProgress, getCurrentBucket } from "../lib/api"
 import { getRandomPronunciationTip } from "../lib/pronunciationTips"
+import { SlidingMessages } from "@/components/SlidingMessages"
 
 export default async function HomePage() {
   const userProgress = await getUserProgress()
@@ -19,11 +20,16 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">Learn v8 English by practice</h1>
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">Learn English by practice</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* App Tips */}
+          <div className="col-span-full mb-4">
+            <SlidingMessages />
+          </div>
           {/* Overall Progress */}
           <Card className="border-t-4 border-indigo-500">
             <CardHeader>
@@ -109,8 +115,8 @@ export default async function HomePage() {
             </Card>
           </Link>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }
 

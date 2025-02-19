@@ -1,12 +1,12 @@
 export interface Card {
   id: number
-  englishWord: string
-  pronunciation: string
-  frenchTranslation: string
-  frenchPhrase: string
-  englishPhrase: string
-  englishPhrasePronunciation: string
-  totalCards: number
+  example_en: string
+  example_vi: string
+  word: string
+  type: string
+  ipa: string
+  ipa_example: string
+  vi: string
 }
 
 export interface GuideStep {
