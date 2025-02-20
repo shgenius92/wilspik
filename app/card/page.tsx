@@ -161,7 +161,7 @@ export default function CardPage() {
     // if currentPosition is last of seenCards => fetch random card
     // else currentPosition + 1 + fetchCard + display
 
-    if (currentPosition === 6) {
+    if (currentPosition === defaultLotSize - 1) {
         setShowCongratulations(true);
     } else if (currentPosition == seenCards.size - 1) {
         const data = await fetchRandomCard(seenCards, currentBucketVar, repetitionCards);
