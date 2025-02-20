@@ -10,14 +10,11 @@ export async function getUserProgress(): Promise<UserProgress> {
   }
 }
 
-export async function getCurrentBucket(): Promise<Bucket | null> {
-  // This is a mock function. Replace with actual API call.
-  return {
-    id: 2,
-    name: "Common Phrases",
-    totalCards: 100,
-    completedCards: 25,
-    isUnlocked: true,
-  }
+export function getCurrentBucket(): Int {
+  // if no currentBucket is stored => 1
+  const storedCurrentBucket = localStorage.getItem('currentBucket');
+  if (storedCurrentBucket)
+    return parseInt(storedCurrentBucket, 10);
+  else 1;
 }
 

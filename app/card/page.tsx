@@ -37,7 +37,7 @@ export default function CardPage() {
   const [seenCards, setSeenCards] = useState(new Set<number>());
   const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
   const [progress, setProgress] = useState({ totalSeenCards: 0, totalCards: 0 });
-  const [currentBucketVar, setCurrentBucketVar] = useState(0);
+  const [currentBucketVar, setCurrentBucketVar] = useState(1);
 
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
   const [isBlurred, setIsBlurred] = useState(true)

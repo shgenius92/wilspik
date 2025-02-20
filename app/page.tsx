@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { AcademicCapIcon, PlayIcon, ArrowPathIcon, BookOpenIcon, SpeakerWaveIcon } from "@heroicons/react/24/outline"
@@ -6,18 +9,21 @@ import { getUserProgress, getCurrentBucket } from "../lib/api"
 import { getRandomPronunciationTip } from "../lib/pronunciationTips"
 import { SlidingMessages } from "@/components/SlidingMessages"
 
-export default async function HomePage() {
-  const userProgress = await getUserProgress()
-  const currentBucket = await getCurrentBucket()
-  const pronunciationTip = getRandomPronunciationTip()
+export default function HomePage() {
+  const [currentBucket, setCurrentBucket] = useState(1);
+  const [seenCards, setSeenCards] = useState(new Set<number>());
 
-  const bucketToShow = currentBucket || {
-    id: 1,
-    name: "Basic Vocabulary",
-    totalCards: 100,
-    completedCards: 0,
-    isUnlocked: true,
-  }
+  const totalBuckets = 34;
+  const totalCards = 100;
+  const completedBuckets = currentBucket - 1;
+
+  useEffect(() => {
+    const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
+    const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
+
+    setCurrentBucket(storedCurrentBucket);
+    setSeenCards(storedSeenCards);
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,9 +45,9 @@ export default async function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Progress value={(userProgress.completedBuckets / userProgress.totalBuckets) * 100} className="mb-2" />
+              <Progress value={(completedBuckets / totalBuckets) * 100} className="mb-2" />
               <p className="text-sm text-gray-600">
-                {userProgress.completedBuckets} of {userProgress.totalBuckets} buckets completed
+                {completedBuckets} of {totalBuckets} buckets completed
               </p>
             </CardContent>
           </Card>
@@ -55,13 +61,13 @@ export default async function HomePage() {
                   Continue Learning
                 </CardTitle>
                 <CardDescription>
-                  Bucket {bucketToShow.id}: {bucketToShow.name}
+                  Bucket {currentBucket}:
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Progress value={(bucketToShow.completedCards / bucketToShow.totalCards) * 100} className="mb-2" />
+                <Progress value={(seenCards.size / totalCards) * 100} className="mb-2" />
                 <p className="text-sm text-gray-600">
-                  {bucketToShow.completedCards} of {bucketToShow.totalCards} cards completed
+                  {seenCards.size} of {totalCards} cards completed
                 </p>
               </CardContent>
             </Card>
@@ -94,7 +100,7 @@ export default async function HomePage() {
                 <CardDescription>Review marked cards</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">{userProgress.markedForRevision} cards marked for revision</p>
+                <p className="text-sm text-gray-600">0 cards marked for revision</p>
               </CardContent>
             </Card>
           </Link>
