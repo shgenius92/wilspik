@@ -12,6 +12,7 @@ import { SlidingMessages } from "@/components/SlidingMessages"
 export default function HomePage() {
   const [currentBucket, setCurrentBucket] = useState(1);
   const [seenCards, setSeenCards] = useState(new Set<number>());
+  const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
 
   const totalBuckets = 34;
   const totalCards = 100;
@@ -20,9 +21,11 @@ export default function HomePage() {
   useEffect(() => {
     const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
     const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
+    const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
 
     setCurrentBucket(storedCurrentBucket);
     setSeenCards(storedSeenCards);
+    setRepetitionCards(storedRepetitionCards);
   }, [])
 
   return (
@@ -100,7 +103,7 @@ export default function HomePage() {
                 <CardDescription>Review marked cards</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">0 cards marked for revision</p>
+                <p className="text-sm text-gray-600">{repetitionCards.size} cards marked for revision</p>
               </CardContent>
             </Card>
           </Link>

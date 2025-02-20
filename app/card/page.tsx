@@ -3,10 +3,14 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon } from "@heroicons/react/24/outline"
+import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
+
+const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
 
 const guideSteps: GuideStep[] = [
   { target: "englishWord", content: "This is the English word you're learning.", placement: "bottom" },
@@ -28,7 +32,47 @@ const guideSteps: GuideStep[] = [
     content: "If you've successfully translated and pronounced the phrase, move to the next card.",
     placement: "bottom",
   },
+  {
+    target: "previousCard",
+    content: "...",
+    placement: "bottom",
+  },
 ]
+
+function CongratulationsPopup({ onClose }: { onClose: () => void }) {
+      const router = useRouter()
+
+      // update the current bucket => currentBucket + 1
+      // seenCards to restore
+      // Run the state update logic only once when the component is mounted
+      useEffect(() => {
+        // Get the current bucket from localStorage or state
+        const currentBucketStored = parseInt(localStorage.getItem('currentBucket') || '1', 10);
+
+        // Update bucket only if it's not already the next one
+
+        const nextBucket = currentBucketStored + 1;
+        console.log("CongratulationsPopup called, next bucket: ", nextBucket);
+
+        localStorage.setItem('currentBucket', JSON.stringify(nextBucket));
+        localStorage.setItem('seenCards', JSON.stringify([]));
+
+      }, []); // The empty dependency array ensures this effect runs only once when the component mounts
+
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <ReactConfetti />
+          <div className="bg-white p-8 rounded-lg text-center">
+            <h2 className="text-2xl font-bold mb-4">Congratulations!</h2>
+            <p className="mb-4">You've completed this bucket successfully!</p>
+            <div className="flex justify-center space-x-4">
+              <Button onClick={() => router.push("/")}>Next bucket</Button>
+            </div>
+          </div>
+        </div>
+      )
+    }
 
 export default function CardPage() {
   const defaultLotSize = 100; // TODO: to be deleted
@@ -38,6 +82,11 @@ export default function CardPage() {
   const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
   const [progress, setProgress] = useState({ totalSeenCards: 0, totalCards: 0 });
   const [currentBucketVar, setCurrentBucketVar] = useState(1);
+  const [currentPosition, setCurrentPosition] = useState<number>(0);
+
+  const [showCongratulations, setShowCongratulations] = useState(false)
+
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
   const [isBlurred, setIsBlurred] = useState(true)
@@ -48,58 +97,121 @@ export default function CardPage() {
   useEffect(() => {
     const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
     const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
+    const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
+    const initCurrentPosition = storedSeenCards.size - 1;
 
     console.log("storedCurrentBucket: ", storedCurrentBucket);
     console.log("storedSeenCards: ", storedSeenCards);
+    console.log("currentPosition: ", storedSeenCards.size - 1);
     setSeenCards(storedSeenCards);
     setCurrentBucketVar(storedCurrentBucket);
+    setRepetitionCards(storedRepetitionCards);
+    setCurrentPosition(initCurrentPosition);
 
-    firstLoad(storedSeenCards, storedCurrentBucket);
+    firstLoad(storedSeenCards, storedCurrentBucket, initCurrentPosition, storedRepetitionCards);
 
-    setCurrentGuideStep(0)
-    setShowGuide(false)
-    setIsBlurred(true)
-    setIsMarkedForRevision(false)
-    const timer = setTimeout(() => {
-          setIsBlurred(false)
-        }, 6000)
-    return () => clearTimeout(timer)
+    setCurrentGuideStep(0);
+    setShowGuide(false);
+
+    handleBlurred();
   }, [])
 
-  const firstLoad = async (seenCards: Set<number>, storedBucket: Int) => {
-    (seenCards.size > 0) ? await fetchLastCard(seenCards) : await fetchRandomCard(seenCards, storedBucket);
+  const firstLoad = async (seenCards: Set<number>, storedBucket: Int, currentPosition: Int, repetitionCards: Set<number>) => {
+    let data = null
+    if (seenCards.size > 0) {
+      data = await fetchLastCard(seenCards);
+    } else {
+      data = await fetchRandomCard(seenCards, storedBucket);
+    }
+    display(data, currentPosition, seenCards, repetitionCards);
+  }
+
+  const display = (data, currentPosition, seenCards, repetitionCards) => {
+    // TODO - to delete the progress from the server response
+    if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
+      setCurrentCard(data.card);  // Set the current card in state
+      setProgress({ totalSeenCards: currentPosition + 1, totalCards: defaultLotSize });  // Update progress if available
+
+      const updatedSeenCards = new Set(seenCards);  // Avoid mutating seenCards directly
+      updatedSeenCards.add(data.card.id);  // Add the current card's ID to the seen cards set
+      setSeenCards(updatedSeenCards);  // Update seenCards state
+      localStorage.setItem('seenCards', JSON.stringify([...updatedSeenCards]));  // Save updated seen cards to localStorage
+
+      // check if the card is marked for revision or not
+      repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
+    }
+  }
+
+  const handleBlurred = () => {
+    // Set the card as blurred before the 6-second timer
+    setIsBlurred(true);
+
+    // Clear any existing timer if present
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
+
+    // Set the blur to false after 6 seconds
+    blurTimeoutRef.current = setTimeout(() => {
+      setIsBlurred(false);
+    }, 6000);
   }
 
   const nextCard = async () => {
-    await fetchRandomCard(seenCards, currentBucketVar);
-    setIsBlurred(true);
+    // if currentPosition is last of seenCards => fetch random card
+    // else currentPosition + 1 + fetchCard + display
 
-    const timer = setTimeout(() => {
-          setIsBlurred(false)
-        }, 6000)
+    if (currentPosition === 6) {
+        setShowCongratulations(true);
+    } else if (currentPosition == seenCards.size - 1) {
+        const data = await fetchRandomCard(seenCards, currentBucketVar, repetitionCards);
+        handleBlurred();
+
+        const newCardPosition = currentPosition + 1;
+        setCurrentPosition(newCardPosition);
+        display(data, newCardPosition, seenCards, repetitionCards);
+    } else {
+        const newCardPosition = currentPosition + 1;
+        setCurrentPosition(newCardPosition);
+        const cardId = Array.from(seenCards)[newCardPosition];
+
+        const data = await fetchCard(cardId, seenCards, repetitionCards);
+        handleBlurred();
+
+        display(data, newCardPosition, seenCards, repetitionCards);
+    }
+  }
+
+  const previousCard = async () => {
+    // currentPosition - 1 + fetchCard + display
+    const newCardPosition = currentPosition - 1;
+    setCurrentPosition(newCardPosition);
+    const cardId = Array.from(seenCards)[newCardPosition];
+
+    const data = await fetchCard(cardId, seenCards, repetitionCards);
+    handleBlurred();
+
+    display(data, newCardPosition, seenCards, repetitionCards);
   }
 
   const fetchLastCard = async (seenCards: Set<number>) => {
       const lastSeenCardId = Array.from(seenCards)[seenCards.size - 1];
-      const response = await fetch(`/api/getCard?id=${lastSeenCardId}`, {
+      return await fetchCard(lastSeenCardId, seenCards);
+  }
+
+  const fetchCard = async (cardId: Int) => {
+      console.log("fetchCard: id - ", cardId);
+      const response = await fetch(`/api/getCard?id=${cardId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
-      console.log('fetchLastCard: data: ', data);
+      console.log('fetchcard: data - ', data);
 
-      if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
-            setCurrentCard(data.card);  // Set the current card in state
-            setProgress({ totalSeenCards: seenCards.size, totalCards: defaultLotSize });  // Update progress if available
+      return data;
+  }
 
-            const updatedSeenCards = new Set(seenCards);  // Avoid mutating seenCards directly
-            updatedSeenCards.add(data.card.id);  // Add the current card's ID to the seen cards set
-            setSeenCards(updatedSeenCards);  // Update seenCards state
-            localStorage.setItem('seenCards', JSON.stringify([...updatedSeenCards]));  // Save updated seen cards to localStorage
-      }
-  };
-
-  const fetchRandomCard = async (seenCards: Set<number>, currentBucket: number) => {
+  const fetchRandomCard = async (seenCards: Set<number>, currentBucket: number, repetitionCards: Set<number>) => {
       const response = await fetch('/api/getCard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,20 +225,34 @@ export default function CardPage() {
         return null;  // Return null if no more cards are available
       }
 
-      if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
-            setCurrentCard(data.card);  // Set the current card in state
-            setProgress(data.progress);  // Update progress if available
-
-            const updatedSeenCards = new Set(seenCards);  // Avoid mutating seenCards directly
-            updatedSeenCards.add(data.card.id);  // Add the current card's ID to the seen cards set
-            setSeenCards(updatedSeenCards);  // Update seenCards state
-            localStorage.setItem('seenCards', JSON.stringify([...updatedSeenCards]));  // Save updated seen cards to localStorage
-      }
+      return data;
     };
 
   const handleMarkForRevision = () => {
-    setIsMarkedForRevision(!isMarkedForRevision)
-    // console.log("Marked for revision:", card.id)
+
+    // if !isMarkedForRevision => mark for revision + remove from the repetitionCards
+
+    if (currentCard?.id) {
+
+      if (isMarkedForRevision) {
+        // if isMarkedForRevision => unmark for revision + remove from the repetitionCards
+        const updatedRepetitionCards = new Set(repetitionCards);
+        updatedRepetitionCards.delete(currentCard.id);
+        setRepetitionCards(updatedRepetitionCards);
+        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
+
+        setIsMarkedForRevision(!isMarkedForRevision);
+        console.log("Card unmarked for revision: ", currentCard.id);
+      } else {
+        const updatedRepetitionCards = new Set(repetitionCards);
+        updatedRepetitionCards.add(currentCard.id);
+        setRepetitionCards(updatedRepetitionCards);
+        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
+
+        setIsMarkedForRevision(!isMarkedForRevision);
+        console.log("Card marked for revision: ", currentCard.id);
+      }
+    }
   }
 
   const handleGuideNext = () => {
@@ -222,12 +348,23 @@ export default function CardPage() {
           </div>
         )}
 
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between items-center mt-4">
+
+
+
+          <div
+                                id="previousCard"
+                                className={`relative ${showGuide && guideSteps[currentGuideStep].target === "previousCard" ? "z-50" : ""}`}
+                              >
+                                <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
+                                  <ChevronLeftIcon/>
+                                </Button>
+                              </div>
           <div
             id="markRevision"
             className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
           >
-            <Button variant="outline" onClick={handleMarkForRevision}>
+            <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision}>
               {isMarkedForRevision ? (
                 <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
               ) : (
@@ -236,19 +373,21 @@ export default function CardPage() {
               Mark for Revision
             </Button>
           </div>
+
           {renderGuidePopover(guideSteps[5])}
           <div
             id="nextCard"
             className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
           >
             <Button onClick={nextCard}>
-              Next Card
+              {currentPosition === defaultLotSize - 1 ? "Finish" : "Next"}
               <ChevronRightIcon className="w-5 h-5 ml-2" />
             </Button>
           </div>
           {renderGuidePopover(guideSteps[6])}
         </CardFooter>
       </Card>
+      {showCongratulations && <CongratulationsPopup/>}
     </div>
   )
 
