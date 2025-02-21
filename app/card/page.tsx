@@ -287,7 +287,7 @@ export default function CardPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <main className="flex-grow flex items-start justify-center p-4 relative">
+      <main className="flex-grow flex items-center justify-center p-4 relative">
         {showGuide && <div className="absolute inset-0 bg-gray-900 bg-opacity-50 z-40 pointer-events-none" />}
         <Card className="w-full max-w-sm relative">
           <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
