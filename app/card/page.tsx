@@ -34,7 +34,7 @@ const guideSteps: GuideStep[] = [
   },
   {
     target: "previousCard",
-    content: "...",
+    content: "previous card",
     placement: "bottom",
   },
 ]
@@ -95,10 +95,15 @@ export default function CardPage() {
   const [isMarkedForRevision, setIsMarkedForRevision] = useState(false)
 
   useEffect(() => {
+    const storedShowGuide = localStorage.getItem('showGuide');
     const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
     const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
     const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
     const initCurrentPosition = (storedSeenCards.size === 0) ? 0 : storedSeenCards.size - 1;
+    if (!storedShowGuide) {
+      setCurrentGuideStep(0);
+      setShowGuide(true);
+    }
 
     console.log("storedCurrentBucket: ", storedCurrentBucket);
     console.log("storedSeenCards: ", storedSeenCards);
@@ -109,9 +114,6 @@ export default function CardPage() {
     setCurrentPosition(initCurrentPosition);
 
     firstLoad(storedSeenCards, storedCurrentBucket, initCurrentPosition, storedRepetitionCards);
-
-    setCurrentGuideStep(0);
-    setShowGuide(false);
 
     handleBlurred();
   }, [])
@@ -259,7 +261,8 @@ export default function CardPage() {
     if (currentGuideStep < guideSteps.length - 1) {
       setCurrentGuideStep(currentGuideStep + 1)
     } else {
-      setShowGuide(false)
+      setShowGuide(false);
+      localStorage.setItem('showGuide', 'false');
     }
   }
 
@@ -360,6 +363,8 @@ export default function CardPage() {
                                   <ChevronLeftIcon/>
                                 </Button>
                               </div>
+
+          {renderGuidePopover(guideSteps[7])}
           <div
             id="markRevision"
             className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
