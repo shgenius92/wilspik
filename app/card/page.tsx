@@ -13,30 +13,31 @@ import { useRouter } from "next/navigation"
 const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
 
 const guideSteps: GuideStep[] = [
-  { target: "englishWord", content: "This is the English word you're learning.", placement: "bottom" },
-  { target: "pronunciation", content: "This is how to pronounce the English word.", placement: "bottom" },
-  { target: "frenchTranslation", content: "This is the French translation of the English word.", placement: "bottom" },
+  { target: "", content: "Voici un guide pour vous accompagner et vous expliquer les règles du jeu", placement: "bottom" },
+  { target: "englishWord", content: "Le mot en Anglais à apprendre", placement: "bottom" },
+  { target: "pronunciation", content: "Comment ça se prononce ?", placement: "bottom" },
+  { target: "frenchTranslation", content: "La traduction en Français", placement: "bottom" },
   {
     target: "frenchPhrase",
-    content: "Read this French phrase and try to translate it to English.",
+    content: "Lisez cette phrase en français à haute voix et essayer de la traduire en anglais à haute voix également",
     placement: "bottom",
   },
   {
     target: "englishPhrase",
-    content: "This is the English translation. Practice pronouncing it correctly.",
-    placement: "bottom",
-  },
-  { target: "markRevision", content: "Tap here if you want to review this card later.", placement: "bottom" },
-  {
-    target: "nextCard",
-    content: "If you've successfully translated and pronounced the phrase, move to the next card.",
+    content: "La traduction de la phrase en Anglais",
     placement: "bottom",
   },
   {
     target: "previousCard",
-    content: "previous card",
+    content: "Revenez sur la carte précédente",
     placement: "bottom",
   },
+  { target: "markRevision", content: "Marquez la phrase pour révision si vous n'avez pas réussi la traduction", placement: "bottom" },
+  {
+    target: "nextCard",
+    content: "Passez à la prochaine carte",
+    placement: "bottom",
+  }
 ]
 
 function CongratulationsPopup({ onClose }: { onClose: () => void }) {
@@ -301,6 +302,7 @@ export default function CardPage() {
                 {currentCard.word} {currentCard.type}
               </h2>
               {renderGuidePopover(guideSteps[0])}
+              {renderGuidePopover(guideSteps[1])}
               <div
                 className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
                 id="pronunciation"
@@ -308,14 +310,15 @@ export default function CardPage() {
                 <SpeakerWaveIcon className="w-5 h-5" />
                 <span className="text-sm">{currentCard.ipa}</span>
               </div>
-              {renderGuidePopover(guideSteps[1])}
+
+              {renderGuidePopover(guideSteps[2])}
               <p
-                className={`text-lg text-gray-700 relative ${showGuide && guideSteps[currentGuideStep].target === "frenchTranslation" ? "z-50 p-2 rounded" : ""}`}
+                className={`text-lg text-gray-700 relative ${showGuide && guideSteps[currentGuideStep].target === "frenchTranslation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
                 id="frenchTranslation"
               >
                 {currentCard.vi}
               </p>
-              {renderGuidePopover(guideSteps[2])}
+              {renderGuidePopover(guideSteps[3])}
             </CardHeader>
 
             {/* Conditionally render CardContent if currentCard is available */}
@@ -326,7 +329,7 @@ export default function CardPage() {
               >
                 <p className="text-base text-blue-800">{currentCard.example_vi}</p>
               </div>
-              {renderGuidePopover(guideSteps[3])}
+              {renderGuidePopover(guideSteps[4])}
               <div
                 className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
                 id="englishPhrase"
@@ -341,7 +344,7 @@ export default function CardPage() {
                   <span className="text-xs">{currentCard.ipa_example}</span>
                 </div>
               </div>
-              {renderGuidePopover(guideSteps[4])}
+              {renderGuidePopover(guideSteps[5])}
             </CardContent>
           </>
         ) : (
@@ -364,7 +367,7 @@ export default function CardPage() {
                                 </Button>
                               </div>
 
-          {renderGuidePopover(guideSteps[7])}
+          {renderGuidePopover(guideSteps[6])}
           <div
             id="markRevision"
             className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
@@ -378,8 +381,8 @@ export default function CardPage() {
               Mark for Revision
             </Button>
           </div>
+          {renderGuidePopover(guideSteps[7])}
 
-          {renderGuidePopover(guideSteps[5])}
           <div
             id="nextCard"
             className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
@@ -389,7 +392,7 @@ export default function CardPage() {
               <ChevronRightIcon className="w-5 h-5 ml-2" />
             </Button>
           </div>
-          {renderGuidePopover(guideSteps[6])}
+          {renderGuidePopover(guideSteps[8])}
         </CardFooter>
       </Card>
       {showCongratulations && <CongratulationsPopup/>}
