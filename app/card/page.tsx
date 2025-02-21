@@ -9,6 +9,7 @@ import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
+import { Header } from "@/components/Header"
 
 const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
 
@@ -284,120 +285,116 @@ export default function CardPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative">
-      {showGuide && <div className="absolute inset-0 bg-gray-900 bg-opacity-50 z-40 pointer-events-none" />}
-      <Card className="w-full max-w-sm relative">
-        <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
-          {progress.totalSeenCards} / {progress.totalCards}
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center p-4 relative">
+        {showGuide && <div className="absolute inset-0 bg-gray-900 bg-opacity-50 z-40 pointer-events-none" />}
+        <Card className="w-full max-w-sm relative">
+          <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
+            {progress.totalSeenCards} / {progress.totalCards}
+          </div>
 
-        {/* Conditionally render CardHeader if currentCard is available */}
-        {currentCard ? (
-          <>
-            <CardHeader className="text-center space-y-2 mt-8">
-              <h2
-                className={`text-2xl font-bold text-gray-900 relative ${showGuide && guideSteps[currentGuideStep].target === "englishWord" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
-                id="englishWord"
-              >
-                {currentCard.word} {currentCard.type}
-              </h2>
-              {renderGuidePopover(guideSteps[0])}
-              {renderGuidePopover(guideSteps[1])}
-              <div
-                className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
-                id="pronunciation"
-              >
-                <SpeakerWaveIcon className="w-5 h-5" />
-                <span className="text-sm">{currentCard.ipa}</span>
-              </div>
-
-              {renderGuidePopover(guideSteps[2])}
-              <p
-                className={`text-lg text-gray-700 relative ${showGuide && guideSteps[currentGuideStep].target === "frenchTranslation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
-                id="frenchTranslation"
-              >
-                {currentCard.vi}
-              </p>
-              {renderGuidePopover(guideSteps[3])}
-            </CardHeader>
-
-            {/* Conditionally render CardContent if currentCard is available */}
-            <CardContent className="space-y-4">
-              <div
-                className={`bg-blue-50 p-3 rounded-lg relative ${showGuide && guideSteps[currentGuideStep].target === "frenchPhrase" ? "z-50" : ""}`}
-                id="frenchPhrase"
-              >
-                <p className="text-base text-blue-800">{currentCard.example_vi}</p>
-              </div>
-              {renderGuidePopover(guideSteps[4])}
-              <div
-                className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
-                id="englishPhrase"
-              >
-                <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
-                  {currentCard.example_en}
-                </p>
+          {/* Conditionally render CardHeader if currentCard is available */}
+          {currentCard ? (
+            <>
+              <CardHeader className="text-center space-y-2 mt-8">
+                <h2
+                  className={`text-2xl font-bold text-gray-900 relative ${showGuide && guideSteps[currentGuideStep].target === "englishWord" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  id="englishWord"
+                >
+                  {currentCard.word} {currentCard.type}
+                </h2>
+                {renderGuidePopover(guideSteps[0])}
+                {renderGuidePopover(guideSteps[1])}
                 <div
-                  className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}
+                  className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  id="pronunciation"
                 >
                   <SpeakerWaveIcon className="w-5 h-5" />
-                  <span className="text-xs">{currentCard.ipa_example}</span>
+                  <span className="text-sm">{currentCard.ipa}</span>
                 </div>
-              </div>
-              {renderGuidePopover(guideSteps[5])}
-            </CardContent>
-          </>
-        ) : (
-          // Display this message if no card is available
-          <div className="text-center text-xl font-semibold text-gray-600 p-8">
-            No card is available.
-          </div>
-        )}
 
-        <CardFooter className="flex justify-between items-center mt-4">
+                {renderGuidePopover(guideSteps[2])}
+                <p
+                  className={`text-lg text-gray-700 relative ${showGuide && guideSteps[currentGuideStep].target === "frenchTranslation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  id="frenchTranslation"
+                >
+                  {currentCard.vi}
+                </p>
+                {renderGuidePopover(guideSteps[3])}
+              </CardHeader>
 
+              {/* Conditionally render CardContent if currentCard is available */}
+              <CardContent className="space-y-4">
+                <div
+                  className={`bg-blue-50 p-3 rounded-lg relative ${showGuide && guideSteps[currentGuideStep].target === "frenchPhrase" ? "z-50" : ""}`}
+                  id="frenchPhrase"
+                >
+                  <p className="text-base text-blue-800">{currentCard.example_vi}</p>
+                </div>
+                {renderGuidePopover(guideSteps[4])}
+                <div
+                  className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
+                  id="englishPhrase"
+                >
+                  <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
+                    {currentCard.example_en}
+                  </p>
+                  <div
+                    className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}
+                  >
+                    <SpeakerWaveIcon className="w-5 h-5" />
+                    <span className="text-xs">{currentCard.ipa_example}</span>
+                  </div>
+                </div>
+                {renderGuidePopover(guideSteps[5])}
+              </CardContent>
+            </>
+          ) : (
+            // Display this message if no card is available
+            <div className="text-center text-xl font-semibold text-gray-600 p-8">No card is available.</div>
+          )}
 
+          <CardFooter className="flex justify-between items-center mt-4">
+            <div
+              id="previousCard"
+              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "previousCard" ? "z-50" : ""}`}
+            >
+              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
+                <ChevronLeftIcon />
+              </Button>
+            </div>
 
-          <div
-                                id="previousCard"
-                                className={`relative ${showGuide && guideSteps[currentGuideStep].target === "previousCard" ? "z-50" : ""}`}
-                              >
-                                <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
-                                  <ChevronLeftIcon/>
-                                </Button>
-                              </div>
+            {renderGuidePopover(guideSteps[6])}
+            <div
+              id="markRevision"
+              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
+            >
+              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision}>
+                {isMarkedForRevision ? (
+                  <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
+                ) : (
+                  <BookmarkIcon className="w-5 h-5 mr-2" />
+                )}
+                Mark for Revision
+              </Button>
+            </div>
+            {renderGuidePopover(guideSteps[7])}
 
-          {renderGuidePopover(guideSteps[6])}
-          <div
-            id="markRevision"
-            className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
-          >
-            <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision}>
-              {isMarkedForRevision ? (
-                <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
-              ) : (
-                <BookmarkIcon className="w-5 h-5 mr-2" />
-              )}
-              Mark for Revision
-            </Button>
-          </div>
-          {renderGuidePopover(guideSteps[7])}
-
-          <div
-            id="nextCard"
-            className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
-          >
-            <Button onClick={nextCard}>
-              {currentPosition === defaultLotSize - 1 ? "Finish" : "Next"}
-              <ChevronRightIcon className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-          {renderGuidePopover(guideSteps[8])}
-        </CardFooter>
-      </Card>
-      {showCongratulations && <CongratulationsPopup/>}
+            <div
+              id="nextCard"
+              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
+            >
+              <Button onClick={nextCard}>
+                {currentPosition === defaultLotSize - 1 ? "Finish" : "Next"}
+                <ChevronRightIcon className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+            {renderGuidePopover(guideSteps[8])}
+          </CardFooter>
+        </Card>
+      </main>
+      {showCongratulations && <CongratulationsPopup onClose={loadNextCard} />}
     </div>
   )
-
 }
-
