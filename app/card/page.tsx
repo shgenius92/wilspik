@@ -98,11 +98,11 @@ export default function CardPage() {
     const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
     const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
     const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
-    const initCurrentPosition = storedSeenCards.size - 1;
+    const initCurrentPosition = (storedSeenCards.size === 0) ? 0 : storedSeenCards.size - 1;
 
     console.log("storedCurrentBucket: ", storedCurrentBucket);
     console.log("storedSeenCards: ", storedSeenCards);
-    console.log("currentPosition: ", storedSeenCards.size - 1);
+    console.log("currentPosition: ", initCurrentPosition);
     setSeenCards(storedSeenCards);
     setCurrentBucketVar(storedCurrentBucket);
     setRepetitionCards(storedRepetitionCards);

@@ -61,7 +61,7 @@ export default function HomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900">
                   <PlayIcon className="w-6 h-6 mr-2 text-green-500" />
-                  Continue Learning
+                  {seenCards.size === 0 ? "Start" : "Continue"} Learning
                 </CardTitle>
                 <CardDescription>
                   Bucket {currentBucket}:
