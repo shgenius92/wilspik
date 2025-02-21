@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, LightBulbIcon, PauseIcon, PlayIcon } from "@heroicons/react/24/outline"
 
 const messages = [
-  "To learn any language 3 practices: speaking / vocabularies / repetition",
-  "Parler couramment ? c'est notre promesse si vous allez jusqu'au bout des buckets",
-  "Only necessary life needed Vocabulaire qui vous permettra de parler couramment",
-  "Are you preparing yourself for studies ? Or for déménagement ? This application is suitable for you",
-  "Prenez de bonnes habitudes, 15min par jour est suffisant pendant votre pause café le matin.",
-]
+  "Pour apprendre n'importe quelle langue, il y a 3 pratiques essentielles : Vocabulaire / Parler / Répétition",
+  "Parler couramment ? C'est notre promesse si vous allez jusqu'au bout des buckets.",
+  "Le vocabulaire essentiel à apprendre pour vous permettre de parler couramment.",
+  "Adoptez de bonnes habitudes : 15 minutes par jour suffisent, pendant votre pause café le matin ou l'après-midi."
+];
 
 export function SlidingMessages() {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
