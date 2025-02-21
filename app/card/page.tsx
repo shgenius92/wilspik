@@ -394,7 +394,7 @@ export default function CardPage() {
           </CardFooter>
         </Card>
       </main>
-      {showCongratulations && <CongratulationsPopup onClose={loadNextCard} />}
+      {showCongratulations && <CongratulationsPopup />}
     </div>
   )
 }
