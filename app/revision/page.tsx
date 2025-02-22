@@ -28,6 +28,13 @@ function computeNextPosition(cardsSet: Set<number>, position: number): number {
       return position + 1;
 }
 
+function computePreviousPosition(cardsSet: Set<number>, position: number): number {
+      if (position === 0) {
+        return cardsSet.size - 1;
+      }
+      return position - 1;
+}
+
 export default function CardPage() {
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
@@ -134,7 +141,7 @@ export default function CardPage() {
 
   const previousCard = async () => {
     // currentPosition - 1 + fetchCard + display
-    const newCardPosition = currentPosition - 1;
+    const newCardPosition = computePreviousPosition(repetitionCards, currentPosition);
     const nextCardId = Array.from(repetitionCards)[newCardPosition];
 
     const data = await fetchCard(nextCardId);

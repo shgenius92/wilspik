@@ -14,13 +14,13 @@ import { Header } from "@/components/Header"
 const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
 
 const guideSteps: GuideStep[] = [
-  { target: "", content: "Voici un guide pour vous accompagner et vous expliquer les règles du jeu", placement: "bottom" },
-  { target: "englishWord", content: "Le mot en Anglais à apprendre", placement: "bottom" },
+  { target: "", content: "Voici un guide pour vous accompagner et vous expliquer les règles ", placement: "bottom" },
+  { target: "englishWord", content: "Le mot en Anglais à mémoriser ", placement: "bottom" },
   { target: "pronunciation", content: "Comment ça se prononce ?", placement: "bottom" },
   { target: "frenchTranslation", content: "La traduction en Français", placement: "bottom" },
   {
     target: "frenchPhrase",
-    content: "Lisez cette phrase en français à haute voix et essayer de la traduire en anglais à haute voix également",
+    content: "Lisez cette phrase en français à haute voix et essayez de la traduire en anglais à haute voix également",
     placement: "bottom",
   },
   {
@@ -30,7 +30,7 @@ const guideSteps: GuideStep[] = [
   },
   {
     target: "previousCard",
-    content: "Revenez sur la carte précédente",
+    content: "Retournez sur la carte précédente",
     placement: "bottom",
   },
   { target: "markRevision", content: "Marquez la phrase pour révision si vous n'avez pas réussi la traduction", placement: "bottom" },
@@ -102,7 +102,7 @@ export default function CardPage() {
     const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
     const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
     const initCurrentPosition = (storedSeenCards.size === 0) ? 0 : storedSeenCards.size - 1;
-    if (!storedShowGuide) {
+    if (!storedShowGuide || (storedShowGuide && storedShowGuide === "true")) {
       setCurrentGuideStep(0);
       setShowGuide(true);
     }

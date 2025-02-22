@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, LightBulbIcon, PauseIcon, PlayIcon } from "@heroicons/react/24/outline"
 
 const messages = [
-  "Pour apprendre n'importe quelle langue, il y a 3 pratiques essentielles : Vocabulaire / Parler / Répétition",
+  "3 pratiques essentielles pour maitriser une langue : Apprendre le Vocabulaire / Pratiquer / Répéter",
   "Parler couramment ? C'est notre promesse si vous allez jusqu'au bout des buckets.",
-  "Le vocabulaire essentiel à apprendre pour vous permettre de parler couramment.",
-  "Adoptez de bonnes habitudes : 15 minutes par jour suffisent, pendant votre pause café le matin ou l'après-midi."
+  "Pas de perte de temps, le vocabulaire essentiel à apprendre pour parler couramment.",
+  "Adoptez les bonnes habitudes : 15 min/jour suffisent, choisissez juste le bon timing ."
 ];
 
 export function SlidingMessages() {

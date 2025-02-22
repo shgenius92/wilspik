@@ -20,7 +20,7 @@ export function Header() {
     { href: "/", label: "Home", icon: HomeIcon },
     { href: "/revision", label: "Revision", icon: ArrowPathIcon },
     { href: "/parameters", label: "Parameters", icon: Cog6ToothIcon },
-    { href: "/help", label: "Help", icon: QuestionMarkCircleIcon },
+    { href: "/help", label: "Help", icon: QuestionMarkCircleIcon, disabled: true },
   ]
 
   return (
@@ -41,7 +41,7 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {menuItems.map((item) => (
-                <DropdownMenuItem key={item.href} disabled={pathname === item.href}>
+                <DropdownMenuItem key={item.href} disabled={item.disabled || pathname === item.href}>
                   <Link href={item.href} className="flex items-center w-full">
                     <item.icon className="h-4 w-4 mr-2" />
                     {item.label}
