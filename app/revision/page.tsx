@@ -31,7 +31,6 @@ function computeNextPosition(cardsSet: Set<number>, position: number): number {
 export default function CardPage() {
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
-  const [progress, setProgress] = useState({ totalSeenCards: 0, totalCards: 0 });
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,7 +44,7 @@ export default function CardPage() {
     const storedRevisionCurrentCard = localStorage.getItem('revision.currentCard');
 
     let parsedRevisionCurrentCard = null;
-    let newCurrentPosition = null;
+    let newCurrentPosition: Int = null;
     // case when storedRevisionCurrentCard == null and storedRepetitionCards == null => null (default) value
       // no currentPosition == null (default) value
     // case when storedRevisionCurrentCard == null and storedRepetitionCards !== null => possible at the beginning
@@ -76,7 +75,6 @@ export default function CardPage() {
 
     setRepetitionCards(storedRepetitionCards);
     setCurrentPosition(newCurrentPosition);
-    setProgress({ totalSeenCards: (newCurrentPosition != null) ? newCurrentPosition + 1 : 0, totalCards: (storedRepetitionCards) ? storedRepetitionCards.size : 0 });
 
     handleBlurred();
   }, [])
@@ -90,7 +88,6 @@ export default function CardPage() {
     // TODO - to delete the progress from the server response
     if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
       setCurrentCard(data.card);  // Set the current card in state
-      setProgress({ totalSeenCards: currentPosition + 1, totalCards: repetitionCards.size });  // Update progress if available
 
       // check if the card is marked for revision or not
       repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
@@ -120,7 +117,6 @@ export default function CardPage() {
     console.log('nextCard - currentPosition: ', currentPosition);
     console.log('nextCard - computeNextPosition(repetitionCards, currentPosition): ', computeNextPosition(repetitionCards, currentPosition));
 
-                // TODO: condition useless
     if (currentCard) {
       const nextPosition = computeNextPosition(repetitionCards, currentPosition);
       const nextCardId = Array.from(repetitionCards)[nextPosition];
@@ -130,27 +126,23 @@ export default function CardPage() {
       display(data, nextPosition, repetitionCards);
 
       setCurrentPosition(nextPosition);
-      setProgress({ totalSeenCards: nextPosition + 1, totalCards: repetitionCards.size });
 
       localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
+      handleBlurred();
     }
   }
 
   const previousCard = async () => {
     // currentPosition - 1 + fetchCard + display
     const newCardPosition = currentPosition - 1;
+    const nextCardId = Array.from(repetitionCards)[newCardPosition];
+
+    const data = await fetchCard(nextCardId);
+    display(data, newCardPosition, repetitionCards);
+
     setCurrentPosition(newCardPosition);
-    const cardId = Array.from(seenCards)[newCardPosition];
-
-    const data = await fetchCard(cardId, seenCards, repetitionCards);
+    localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
     handleBlurred();
-
-    display(data, newCardPosition, seenCards, repetitionCards);
-  }
-
-  const fetchLastCard = async (seenCards: Set<number>) => {
-      const lastSeenCardId = Array.from(seenCards)[seenCards.size - 1];
-      return await fetchCard(lastSeenCardId, seenCards);
   }
 
   const fetchCard = async (cardId: Int) => {
@@ -164,23 +156,6 @@ export default function CardPage() {
 
       return data;
   }
-
-  const fetchRandomCard = async (seenCards: Set<number>, currentBucket: number, repetitionCards: Set<number>) => {
-      const response = await fetch('/api/getCard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seenCardIds: [...seenCards], currentBucket: currentBucket }),
-      });
-      const data = await response.json();
-      console.log('fetchRandomCard: data: ', data);
-
-      if (data.message === 'All cards read!') {
-        alert('You have read all the cards!');
-        return null;  // Return null if no more cards are available
-      }
-
-      return data;
-    };
 
   const handleMarkForRevision = () => {
 
@@ -234,14 +209,15 @@ export default function CardPage() {
           let nextCardId = null;
           if (nextPosition != null) {
             nextCardId = Array.from(updatedRepetitionCards)[nextPosition];
-            fetchCard(nextCardId);
+            const data = await fetchCard(nextCardId);
+            display(data, nextPosition, updatedRepetitionCards);
           } else {
             setCurrentCard(null);
           }
 
           // Update states
           setRepetitionCards(updatedRepetitionCards);
-          setProgress({ totalSeenCards: (nextPosition != null) ? nextPosition + 1 : 0, totalCards: (updatedRepetitionCards) ? updatedRepetitionCards.size : 0 });
+          setCurrentPosition(nextPosition);
 
           // Store in localStorage: repetitionCards / revision.currentCard
           localStorage.setItem('repetitionCards', JSON.stringify(Array.from(updatedRepetitionCards)));
@@ -256,7 +232,7 @@ export default function CardPage() {
       <main className="flex-grow flex items-center justify-center p-4 relative">
         <Card className="w-full max-w-sm relative border-yellow-500 border-2">
           <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
-            {progress.totalSeenCards} / {progress.totalCards}
+            {(repetitionCards.size > 0) ? currentPosition + 1 : 0 } / {repetitionCards.size}
           </div>
           <Badge variant="secondary" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800">
               Revision
@@ -299,11 +275,11 @@ export default function CardPage() {
                   className={`bg-green-50 p-3 rounded-lg space-y-2 relative`}
                   id="englishPhrase"
                 >
-                  <p className={`text-base text-green-800 transition-all duration-300`}>
+                  <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
                     {currentCard.example_en}
                   </p>
                   <div
-                    className={`flex items-center space-x-2 text-green-600 transition-all duration-300`}
+                    className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}
                   >
                     <SpeakerWaveIcon className="w-5 h-5" />
                     <span className="text-xs">{currentCard.ipa_example}</span>
@@ -321,7 +297,7 @@ export default function CardPage() {
               id="previousCard"
               className={`relative`}
             >
-              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
+              <Button variant="outline" size="sm" onClick={previousCard} disabled={repetitionCards && repetitionCards.size <= 1}>
                 <ChevronLeftIcon />
               </Button>
             </div>
@@ -330,7 +306,7 @@ export default function CardPage() {
               id="markRevision"
               className={`relative`}
             >
-              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={unMarkForRepetition}>
+              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={unMarkForRepetition} disabled={!currentCard}>
                 {isMarkedForRevision ? (
                   <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
                 ) : (
@@ -344,7 +320,7 @@ export default function CardPage() {
               id="nextCard"
               className={`relative`}
             >
-              <Button onClick={nextCard}>
+              <Button onClick={nextCard} disabled={repetitionCards && repetitionCards.size <= 1}>
                 Next
                 <ChevronRightIcon className="w-5 h-5 ml-2" />
               </Button>
