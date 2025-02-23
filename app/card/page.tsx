@@ -144,16 +144,36 @@ export default function CardPage() {
     }
   }
 
-  const handlePhraseClick = () => {
-    setIsBlurred(!isBlurred);
+  const handleResponseClick = () => {
+    if (isBlurred) {
+        setIsBlurred(!isBlurred);
+    } else {
+        textToSpeech(currentCard?.example_en);
+    }
   }
 
-  const handlePronunciationClick = useCallback(() => {
+  const textToSpeech = useCallback((text) => {
+    // TODO - Check Speech synthesis support by the using browser
     if (typeof window !== "undefined" && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(currentCard?.word)
+      const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = "en-US" // Set the language to English
-      utterance.rate = 0.8 // Slightly slower rate for clarity
-      window.speechSynthesis.speak(utterance)
+      utterance.rate = 0.5 // Slightly slower rate for clarity
+
+      // Get available voices
+      const voices = window.speechSynthesis.getVoices();
+
+      // Find the specific voice (Aaron in this case)
+      const selectedVoice = voices.find(voice => voice.name === "Aaron" || voice.voiceURI === "Aaron");
+
+      if (selectedVoice) {
+          utterance.voice = selectedVoice;
+      } else {
+          console.warn("The desired voice 'Aaron' is not available.");
+          // Fallback: Use the first available voice
+          utterance.voice = voices[4] || null;
+      }
+
+      window.speechSynthesis.speak(utterance);
     }
   }, [currentCard])
 
@@ -302,7 +322,7 @@ export default function CardPage() {
                 <div
                   className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
                   id="pronunciation"
-                  onClick={handlePronunciationClick}
+                  onClick={() => textToSpeech(currentCard.word)}
                 >
                   <SpeakerWaveIcon className="w-5 h-5" />
                   <span className="text-sm">{currentCard.ipa}</span>
@@ -330,7 +350,7 @@ export default function CardPage() {
                 <div
                   className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
                   id="englishPhrase"
-                  onClick={handlePhraseClick}
+                  onClick={handleResponseClick}
                 >
                   <div className="relative">
                                       <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
