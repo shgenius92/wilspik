@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline"
+import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon, EyeIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -98,7 +98,13 @@ export default function CardPage() {
 
       // check if the card is marked for revision or not
       repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
+
+      setIsBlurred(true);
     }
+  }
+
+  const handlePhraseClick = () => {
+    setIsBlurred(!isBlurred);
   }
 
   const handleBlurred = () => {
@@ -281,16 +287,30 @@ export default function CardPage() {
                 <div
                   className={`bg-green-50 p-3 rounded-lg space-y-2 relative`}
                   id="englishPhrase"
+                  onClick={handlePhraseClick}
                 >
-                  <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
-                    {currentCard.example_en}
-                  </p>
-                  <div
-                    className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}
-                  >
-                    <SpeakerWaveIcon className="w-5 h-5" />
-                    <span className="text-xs">{currentCard.ipa_example}</span>
-                  </div>
+
+                  <div className="relative">
+                                      <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
+                                        {currentCard.example_en}
+                                      </p>
+                                      <div
+                                        className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${
+                                          isBlurred ? "blur-sm" : ""
+                                        }`}
+                                      >
+                                        <SpeakerWaveIcon className="w-5 h-5" />
+                                        <span className="text-xs">{currentCard.ipa_example}</span>
+                                      </div>
+                                      {isBlurred && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
+                                            <EyeIcon className="w-5 h-5 text-green-600" />
+                                            <span className="text-sm font-medium text-green-600">Tap to reveal</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                 </div>
               </CardContent>
             </>

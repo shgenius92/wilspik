@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline"
+import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon,
+  EyeIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -88,8 +89,6 @@ export default function CardPage() {
 
   const [showCongratulations, setShowCongratulations] = useState(false)
 
-  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
   const [isBlurred, setIsBlurred] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
@@ -116,8 +115,6 @@ export default function CardPage() {
     setCurrentPosition(initCurrentPosition);
 
     firstLoad(storedSeenCards, storedCurrentBucket, initCurrentPosition, storedRepetitionCards);
-
-    handleBlurred();
   }, [])
 
   const firstLoad = async (seenCards: Set<number>, storedBucket: Int, currentPosition: Int, repetitionCards: Set<number>) => {
@@ -143,22 +140,12 @@ export default function CardPage() {
 
       // check if the card is marked for revision or not
       repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
+      setIsBlurred(true);
     }
   }
 
-  const handleBlurred = () => {
-    // Set the card as blurred before the 6-second timer
-    setIsBlurred(true);
-
-    // Clear any existing timer if present
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-    }
-
-    // Set the blur to false after 6 seconds
-    blurTimeoutRef.current = setTimeout(() => {
-      setIsBlurred(false);
-    }, 6000);
+  const handlePhraseClick = () => {
+    setIsBlurred(!isBlurred);
   }
 
   const nextCard = async () => {
@@ -169,7 +156,6 @@ export default function CardPage() {
         setShowCongratulations(true);
     } else if (currentPosition == seenCards.size - 1) {
         const data = await fetchRandomCard(seenCards, currentBucketVar, repetitionCards);
-        handleBlurred();
 
         const newCardPosition = currentPosition + 1;
         setCurrentPosition(newCardPosition);
@@ -180,7 +166,6 @@ export default function CardPage() {
         const cardId = Array.from(seenCards)[newCardPosition];
 
         const data = await fetchCard(cardId, seenCards, repetitionCards);
-        handleBlurred();
 
         display(data, newCardPosition, seenCards, repetitionCards);
     }
@@ -193,7 +178,6 @@ export default function CardPage() {
     const cardId = Array.from(seenCards)[newCardPosition];
 
     const data = await fetchCard(cardId, seenCards, repetitionCards);
-    handleBlurred();
 
     display(data, newCardPosition, seenCards, repetitionCards);
   }
@@ -336,16 +320,29 @@ export default function CardPage() {
                 <div
                   className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
                   id="englishPhrase"
+                  onClick={handlePhraseClick}
                 >
-                  <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
-                    {currentCard.example_en}
-                  </p>
-                  <div
-                    className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}
-                  >
-                    <SpeakerWaveIcon className="w-5 h-5" />
-                    <span className="text-xs">{currentCard.ipa_example}</span>
-                  </div>
+                  <div className="relative">
+                                      <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
+                                        {currentCard.example_en}
+                                      </p>
+                                      <div
+                                        className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${
+                                          isBlurred ? "blur-sm" : ""
+                                        }`}
+                                      >
+                                        <SpeakerWaveIcon className="w-5 h-5" />
+                                        <span className="text-xs">{currentCard.ipa_example}</span>
+                                      </div>
+                                      {isBlurred && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
+                                            <EyeIcon className="w-5 h-5 text-green-600" />
+                                            <span className="text-sm font-medium text-green-600">Tap to reveal</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                 </div>
                 {renderGuidePopover(guideSteps[5])}
               </CardContent>
@@ -360,7 +357,7 @@ export default function CardPage() {
               id="previousCard"
               className={`relative ${showGuide && guideSteps[currentGuideStep].target === "previousCard" ? "z-50" : ""}`}
             >
-              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
+              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0 || showGuide === true}>
                 <ChevronLeftIcon />
               </Button>
             </div>
@@ -370,7 +367,7 @@ export default function CardPage() {
               id="markRevision"
               className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
             >
-              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision}>
+              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision} disabled={showGuide === true}>
                 {isMarkedForRevision ? (
                   <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
                 ) : (
@@ -385,7 +382,7 @@ export default function CardPage() {
               id="nextCard"
               className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
             >
-              <Button onClick={nextCard}>
+              <Button onClick={nextCard} disabled={showGuide === true}>
                 {currentPosition === defaultLotSize - 1 ? "Finish" : "Next"}
                 <ChevronRightIcon className="w-5 h-5 ml-2" />
               </Button>
