@@ -158,21 +158,6 @@ export default function CardPage() {
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = "en-US" // Set the language to English
       utterance.rate = 0.5 // Slightly slower rate for clarity
-
-      // Get available voices
-      const voices = window.speechSynthesis.getVoices();
-
-      // Find the specific voice (Aaron in this case)
-      const selectedVoice = voices.find(voice => voice.name === "Aaron" || voice.voiceURI === "Aaron");
-
-      if (selectedVoice) {
-          utterance.voice = selectedVoice;
-      } else {
-          console.warn("The desired voice 'Aaron' is not available.");
-          // Fallback: Use the first available voice
-          utterance.voice = voices[0] || null;
-      }
-
       window.speechSynthesis.speak(utterance);
     }
   }, [currentCard])
