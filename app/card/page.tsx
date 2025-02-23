@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon,
@@ -148,6 +148,15 @@ export default function CardPage() {
     setIsBlurred(!isBlurred);
   }
 
+  const handlePronunciationClick = useCallback(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(currentCard?.word)
+      utterance.lang = "en-US" // Set the language to English
+      utterance.rate = 0.8 // Slightly slower rate for clarity
+      window.speechSynthesis.speak(utterance)
+    }
+  }, [currentCard])
+
   const nextCard = async () => {
     // if currentPosition is last of seenCards => fetch random card
     // else currentPosition + 1 + fetchCard + display
@@ -293,6 +302,7 @@ export default function CardPage() {
                 <div
                   className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
                   id="pronunciation"
+                  onClick={handlePronunciationClick}
                 >
                   <SpeakerWaveIcon className="w-5 h-5" />
                   <span className="text-sm">{currentCard.ipa}</span>
