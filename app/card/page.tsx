@@ -170,7 +170,7 @@ export default function CardPage() {
       } else {
           console.warn("The desired voice 'Aaron' is not available.");
           // Fallback: Use the first available voice
-          utterance.voice = voices[4] || null;
+          utterance.voice = voices[0] || null;
       }
 
       window.speechSynthesis.speak(utterance);
