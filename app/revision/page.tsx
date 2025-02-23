@@ -40,7 +40,6 @@ export default function CardPage() {
   const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
-  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isBlurred, setIsBlurred] = useState(true)
   const [isMarkedForRevision, setIsMarkedForRevision] = useState(false)
 
@@ -82,8 +81,6 @@ export default function CardPage() {
 
     setRepetitionCards(storedRepetitionCards);
     setCurrentPosition(newCurrentPosition);
-
-    handleBlurred();
   }, [])
 
   const firstLoad = async (cardId: Int, currentPosition: Int, repetitionCards: Set<number>) => {
@@ -107,21 +104,6 @@ export default function CardPage() {
     setIsBlurred(!isBlurred);
   }
 
-  const handleBlurred = () => {
-    // Set the card as blurred before the 6-second timer
-    setIsBlurred(true);
-
-    // Clear any existing timer if present
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-    }
-
-    // Set the blur to false after 6 seconds
-    blurTimeoutRef.current = setTimeout(() => {
-      setIsBlurred(false);
-    }, 6000);
-  }
-
   const nextCard = async () => {
     // if currentPosition is last of seenCards => fetch random card
     // else currentPosition + 1 + fetchCard + display
@@ -141,7 +123,6 @@ export default function CardPage() {
       setCurrentPosition(nextPosition);
 
       localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
-      handleBlurred();
     }
   }
 
@@ -155,7 +136,6 @@ export default function CardPage() {
 
     setCurrentPosition(newCardPosition);
     localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
-    handleBlurred();
   }
 
   const fetchCard = async (cardId: Int) => {
