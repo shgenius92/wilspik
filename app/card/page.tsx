@@ -70,7 +70,7 @@ function CongratulationsPopup({ onClose }: { onClose: () => void }) {
             <h2 className="text-2xl font-bold mb-4">Congratulations!</h2>
             <p className="mb-4">You've completed this bucket successfully!</p>
             <div className="flex justify-center space-x-4">
-              <Button onClick={() => router.push("/")}>Next bucket</Button>
+              <Button onClick={() => router.push("/home")}>Next bucket</Button>
             </div>
           </div>
         </div>
