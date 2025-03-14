@@ -11,8 +11,7 @@ import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
 import { Badge } from "@/components/ui/badge"
-
-
+import { UserProgression } from "@/types/UserProgression"
 
 function getCardPosition(cardsSet: Set<number>, revisionCurrentCard: number): number {
   const cardsArray = Array.from(cardsSet);
@@ -36,18 +35,26 @@ function computePreviousPosition(cardsSet: Set<number>, position: number): numbe
 }
 
 export default function CardPage() {
+  const [userProgression, setUserProgression] = useState<UserProgression>(new UserProgression());
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
-  const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
   const [isBlurred, setIsBlurred] = useState(true)
   const [isMarkedForRevision, setIsMarkedForRevision] = useState(false)
 
   useEffect(() => {
-    const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
+    const loadedUserProgression = UserProgression.loadFromLocalStorage();
+    if (loadedUserProgression) {
+        setUserProgression(loadedUserProgression);
+    }
+    const initOrLoadedUserProgression = (loadedUserProgression) ? loadedUserProgression : userProgression;
+
+    const storedRepetitionCards = initOrLoadedUserProgression.getAllRevisionCards();
 
     // TODO rename RevisionCurrentCard to CurrentCardId
-    const storedRevisionCurrentCard = localStorage.getItem('revision.currentCard');
+    const storedRevisionCurrentCard = initOrLoadedUserProgression.currentRevisionCardID;
 
     let parsedRevisionCurrentCard = null;
     let newCurrentPosition: Int = null;
@@ -78,14 +85,16 @@ export default function CardPage() {
 
     if (newCurrentPosition != null && parsedRevisionCurrentCard != null)
         firstLoad(parsedRevisionCurrentCard, newCurrentPosition, storedRepetitionCards);
+    else
+        setLoading(false);
 
-    setRepetitionCards(storedRepetitionCards);
     setCurrentPosition(newCurrentPosition);
   }, [])
 
   const firstLoad = async (cardId: Int, currentPosition: Int, repetitionCards: Set<number>) => {
     let data = await fetchCard(cardId);
     display(data, currentPosition, repetitionCards);
+    setLoading(false);
   }
 
   const display = (data, currentPosition, repetitionCards) => {
@@ -93,9 +102,7 @@ export default function CardPage() {
     if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
       setCurrentCard(data.card);  // Set the current card in state
 
-      // check if the card is marked for revision or not
-      repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
-
+      setIsMarkedForRevision(true);
       setIsBlurred(true);
     }
   }
@@ -107,6 +114,7 @@ export default function CardPage() {
   const nextCard = async () => {
     // if currentPosition is last of seenCards => fetch random card
     // else currentPosition + 1 + fetchCard + display
+    const repetitionCards = userProgression.getAllRevisionCards();
 
     console.log('nextCard - repetitionCards: ', repetitionCards);
     console.log('nextCard - currentPosition: ', currentPosition);
@@ -122,12 +130,15 @@ export default function CardPage() {
 
       setCurrentPosition(nextPosition);
 
-      localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
+      userProgression.setCurrentRevisionCardID(nextCardId);
+      UserProgression.saveToStorage(userProgression);
     }
   }
 
   const previousCard = async () => {
     // currentPosition - 1 + fetchCard + display
+    const repetitionCards = userProgression.getAllRevisionCards();
+
     const newCardPosition = computePreviousPosition(repetitionCards, currentPosition);
     const nextCardId = Array.from(repetitionCards)[newCardPosition];
 
@@ -135,7 +146,9 @@ export default function CardPage() {
     display(data, newCardPosition, repetitionCards);
 
     setCurrentPosition(newCardPosition);
-    localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
+
+    userProgression.setCurrentRevisionCardID(nextCardId);
+    UserProgression.saveToStorage(userProgression);
   }
 
   const fetchCard = async (cardId: Int) => {
@@ -150,38 +163,16 @@ export default function CardPage() {
       return data;
   }
 
-  const handleMarkForRevision = () => {
-
-    // if !isMarkedForRevision => mark for revision + remove from the repetitionCards
-
-    if (currentCard?.id) {
-
-      if (isMarkedForRevision) {
-        // if isMarkedForRevision => unmark for revision + remove from the repetitionCards
-        const updatedRepetitionCards = new Set(repetitionCards);
-        updatedRepetitionCards.delete(currentCard.id);
-        setRepetitionCards(updatedRepetitionCards);
-        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
-
-        setIsMarkedForRevision(!isMarkedForRevision);
-        console.log("Card unmarked for revision: ", currentCard.id);
-      } else {
-        const updatedRepetitionCards = new Set(repetitionCards);
-        updatedRepetitionCards.add(currentCard.id);
-        setRepetitionCards(updatedRepetitionCards);
-        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
-
-        setIsMarkedForRevision(!isMarkedForRevision);
-        console.log("Card marked for revision: ", currentCard.id);
-      }
-    }
-  }
-
   const unMarkForRepetition = async () => {
       // delete the currentCard from repetitionCards
+
+
       if (currentCard) {
-          const updatedRepetitionCards = new Set(repetitionCards);
-          updatedRepetitionCards.delete(currentCard.id);
+          const repetitionCards = userProgression.getAllRevisionCards();
+          const revisionCardBucketID = userProgression.getBucketID(currentCard.id);
+          userProgression.getBucket(revisionCardBucketID).revisionCards.delete(currentCard.id);
+          const updatedRepetitionCards = userProgression.getAllRevisionCards();
+
           console.log('unMarkForRepetition - repetitionCards - before: ', repetitionCards);
           console.log('unMarkForRepetition - repetitionCards - after: ', updatedRepetitionCards);
 
@@ -204,20 +195,33 @@ export default function CardPage() {
             nextCardId = Array.from(updatedRepetitionCards)[nextPosition];
             const data = await fetchCard(nextCardId);
             display(data, nextPosition, updatedRepetitionCards);
+            userProgression.setCurrentRevisionCardID(data.card.id);
           } else {
             setCurrentCard(null);
+            userProgression.setCurrentRevisionCardID(null);
           }
 
           // Update states
-          setRepetitionCards(updatedRepetitionCards);
           setCurrentPosition(nextPosition);
 
           // Store in localStorage: repetitionCards / revision.currentCard
-          localStorage.setItem('repetitionCards', JSON.stringify(Array.from(updatedRepetitionCards)));
-          localStorage.setItem('revision.currentCard', JSON.stringify(nextCardId));
+          UserProgression.saveToStorage(userProgression);
       }
     };
 
+
+
+  if (loading) {
+    return (
+      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-white bg-opacity-70 z-50">
+        <img
+          src="Vanilla@1x-1.0s-280px-250px.svg"
+          alt="Loading"
+          className="max-w-full max-h-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -225,7 +229,7 @@ export default function CardPage() {
       <main className="flex-grow flex items-center justify-center p-4 relative">
         <Card className="w-full max-w-sm relative border-yellow-500 border-2">
           <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
-            {(repetitionCards.size > 0) ? currentPosition + 1 : 0 } / {repetitionCards.size}
+            {(userProgression.getAllRevisionCards().size > 0) ? currentPosition + 1 : 0 } / {userProgression.getAllRevisionCards().size}
           </div>
           <Badge variant="secondary" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800">
               Revision
@@ -286,7 +290,7 @@ export default function CardPage() {
                                         <div className="absolute inset-0 flex items-center justify-center">
                                           <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
                                             <EyeIcon className="w-5 h-5 text-green-600" />
-                                            <span className="text-sm font-medium text-green-600">Tap to reveal</span>
+                                            <span className="text-sm font-medium text-green-600">Check your answer</span>
                                           </div>
                                         </div>
                                       )}
@@ -304,7 +308,7 @@ export default function CardPage() {
               id="previousCard"
               className={`relative`}
             >
-              <Button variant="outline" size="sm" onClick={previousCard} disabled={repetitionCards && repetitionCards.size <= 1}>
+              <Button variant="outline" size="sm" onClick={previousCard} disabled={userProgression.getAllRevisionCards() && userProgression.getAllRevisionCards().size <= 1}>
                 <ChevronLeftIcon />
               </Button>
             </div>
@@ -327,7 +331,7 @@ export default function CardPage() {
               id="nextCard"
               className={`relative`}
             >
-              <Button onClick={nextCard} disabled={repetitionCards && repetitionCards.size <= 1}>
+              <Button onClick={nextCard} disabled={userProgression.getAllRevisionCards() && userProgression.getAllRevisionCards().size <= 1}>
                 Next
                 <ChevronRightIcon className="w-5 h-5 ml-2" />
               </Button>

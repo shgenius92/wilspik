@@ -31,7 +31,7 @@ export function Header() {
         </Link>
         <div className="flex items-center space-x-4">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-s text-gray-900">Our product</span>
+            <span className="text-s text-gray-900">Documentations</span>
           </Link>
           <Button variant="ghost" size="icon" aria-label="Login">
             <UserIcon className="h-5 w-5" />

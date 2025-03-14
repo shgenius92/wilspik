@@ -3,34 +3,65 @@
 import { useState, useEffect} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { AcademicCapIcon, PlayIcon, ArrowPathIcon, BookOpenIcon, SpeakerWaveIcon } from "@heroicons/react/24/outline"
+import { AcademicCapIcon, PlayIcon, ArrowPathIcon, BookOpenIcon, SpeakerWaveIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
 import { getUserProgress, getCurrentBucket } from "../lib/api"
 import { getRandomPronunciationTip } from "../lib/pronunciationTips"
 import { SlidingMessages } from "@/components/SlidingMessages"
 import { Header } from "@/components/Header"
 import { Badge } from "@/components/ui/badge"
-import { BucketsDisplay } from "@/components/BucketsDisplay"
+import { Button } from "@/components/ui/button"
+import { HorizontalScroller } from "@/components/HorizontalScroller"
+import { BucketCard } from "@/components/BucketCard"
+import { UserProgression } from "@/types/UserProgression"
+import { Bucket } from "@/types/Bucket"
 
 export default function HomePage() {
-  const [currentBucket, setCurrentBucket] = useState(1);
-  const [seenCards, setSeenCards] = useState(new Set<number>());
-  const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
-  const [isBucketsDisplayOpen, setIsBucketsDisplayOpen] = useState(false)
+  const [userProgression, setUserProgression] = useState<UserProgression>(new UserProgression());
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [refreshKey, setRefreshKey] = useState<number>(0); // Add refresh state to trigger re-render
 
   const totalBuckets = 34;
+  // TODO: to move to Bucket model
   const totalCards = 100;
-  const completedBuckets = currentBucket - 1;
 
   useEffect(() => {
-    const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
-    const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
-    const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
+    const loadedUserProgression = UserProgression.loadFromLocalStorage();
+    console.log("loadedUserProgression from home: ", loadedUserProgression);
+    const initOrLoadedUserProgression = (loadedUserProgression) ? loadedUserProgression : userProgression;
+    setUserProgression(initOrLoadedUserProgression);
+    UserProgression.saveToStorage(initOrLoadedUserProgression);
 
-    setCurrentBucket(storedCurrentBucket);
-    setSeenCards(storedSeenCards);
-    setRepetitionCards(storedRepetitionCards);
+    setLoading(false);
   }, [])
+
+  if (loading) {
+    return (
+      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-white bg-opacity-70 z-50">
+        <img
+          src="Vanilla@1x-1.0s-280px-250px.svg"
+          alt="Loading"
+          className="max-w-full max-h-full"
+        />
+      </div>
+    );
+  }
+
+  const restartClickHandler = (bucketID: number) => {
+      userProgression.setCurrentBucket(bucketID);
+      userProgression.getCurrentBucket().restart();
+      UserProgression.saveToStorage(userProgression);
+      console.log("restart click handler on bucketID: ", bucketID);
+      window.location.href = '/card';
+  };
+
+  const resumeClickHandler = (bucketID: number) => {
+      userProgression.setCurrentBucket(bucketID);
+      UserProgression.saveToStorage(userProgression);
+      console.log("resume click handler on bucketID: ", bucketID);
+      window.location.href = '/card';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,8 +75,8 @@ export default function HomePage() {
           <div className="col-span-full mb-4">
             <SlidingMessages />
           </div>
-          {/* Overall Progress */}
-          <Card className="border-t-4 border-indigo-500" onClick={() => setIsBucketsDisplayOpen(true)}>
+          {/* Overall Progress
+          <Card className="border-t-4 border-indigo-500">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <AcademicCapIcon className="w-6 h-6 mr-2 text-indigo-500" />
@@ -53,36 +84,30 @@ export default function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Progress value={(completedBuckets / totalBuckets) * 100} className="mb-2" />
+              <Progress value={(userProgression.getCountCompletedBuckets() / totalBuckets) * 100} className="mb-2" />
               <p className="text-sm text-gray-600">
-                {completedBuckets} of {totalBuckets} buckets completed
+                {userProgression.getCountCompletedBuckets()} of {totalBuckets} buckets completed
               </p>
             </CardContent>
-          </Card>
-          <BucketsDisplay isOpen={isBucketsDisplayOpen} onClose={() => setIsBucketsDisplayOpen(false)} />
+          </Card>*/}
           {/* Continue Learning */}
           <Link href={`/card`} className="block">
             <Card className="hover:shadow-lg transition-shadow border-t-4 border-green-500 h-full">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900">
                   <PlayIcon className="w-6 h-6 mr-2 text-green-500" />
-                  {seenCards.size === 0 ? "Start" : "Continue"} Learning
+                  {userProgression.getCurrentBucket().seenCards.size === 0 ? "Start" : "Continue"} Learning
                 </CardTitle>
                 <CardDescription>
-                  Bucket {currentBucket}:
+                  Bucket {userProgression.currentBucketID}:
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Progress value={(seenCards.size / totalCards) * 100} className="mb-2" />
+                <Progress value={(userProgression.getCurrentBucket().seenCards.size / totalCards) * 100} className="mb-2" />
                 <div className="flex justify-between items-center text-sm text-gray-600">
                         <span>
-                          {seenCards.size} of {totalCards} cards completed
+                          {userProgression.getCurrentBucket().seenCards.size} of {totalCards} cards completed
                         </span>
-                        {true && (
-                          <span>
-                            Score: ?
-                          </span>
-                        )}
                 </div>
               </CardContent>
             </Card>
@@ -115,26 +140,70 @@ export default function HomePage() {
                 <CardDescription>Review marked cards</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">{repetitionCards.size} cards marked for revision</p>
+                <p className="text-sm text-gray-600">{userProgression.getAllRevisionCards().size} cards marked for revision</p>
               </CardContent>
             </Card>
           </Link>
 
-          {/* All Buckets
-          <Link href="/buckets" className="block">
-            <Card className="hover:shadow-lg transition-shadow border-t-4 border-blue-500 h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center text-gray-900">
-                  <BookOpenIcon className="w-6 h-6 mr-2 text-blue-500" />
-                  All Buckets
-                </CardTitle>
-                <CardDescription>View all vocabulary buckets</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">{userProgress.totalBuckets} total buckets available</p>
-              </CardContent>
-            </Card>
-          </Link>*/}
+          {/* All Buckets */}
+            <div className="col-span-full">
+              <Card className="border-t-4 border-blue-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-gray-900">
+                    <div className="flex items-center">
+                      <BookOpenIcon className="w-6 h-6 mr-2 text-blue-500" />
+                      <div className="flex flex-col sm:flex-row sm:items-center">
+                        <span>All Buckets</span>
+                        <span className="text-xs text-gray-500 font-normal sm:ml-2">
+                          {userProgression.getCountCompletedBuckets()} of {totalBuckets} buckets completed
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="icon" id="scrollLeft" aria-label="Scroll left">
+                        <ChevronLeftIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" id="scrollRight" aria-label="Scroll right">
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <HorizontalScroller>
+                      {userProgression.progression.map((bucket) => (
+                        <div key={bucket.id} className="px-1">
+                          <BucketCard
+                            id={bucket.id}
+                            isUnlocked={true}
+                            totalCards={100}
+                            completedCards={bucket.seenCards.size}
+                            lastScore={bucket.lastScore}
+                            markedForRevision={bucket.revisionCards.size}
+                            isCompleted={bucket.isCompleted}
+                            isCurrentBucket={bucket.id == userProgression.currentBucketID}
+                            restartClickHandler={restartClickHandler}
+                            resumeClickHandler={resumeClickHandler}
+                          />
+                        </div>
+                      ))}
+
+                      {/* Remaining buckets */}
+                      {Array.from({ length: 34 - userProgression.progression.length}, (_, index) => index + userProgression.progression.length + 1).map((bucketID) => (
+                        <div key={bucketID} className="px-1">
+                          <BucketCard
+                            id={bucketID}
+                            isUnlocked={false}
+                            totalCards={100}
+                            completedCards={0}
+                          />
+                        </div>
+                      ))}
+                    </HorizontalScroller>
+                </CardContent>
+              </Card>
+            </div>
         </div>
       </main>
     </div>

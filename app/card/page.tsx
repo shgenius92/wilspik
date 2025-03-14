@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon,
-  EyeIcon } from "@heroicons/react/24/outline"
+  EyeIcon, LightBulbIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType, GuideStep } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
+import { UserProgression } from "@/types/UserProgression"
 
 const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
 
@@ -42,23 +43,17 @@ const guideSteps: GuideStep[] = [
   }
 ]
 
-function CongratulationsPopup({ onClose }: { onClose: () => void }) {
+function CongratulationsPopup({ onClose, userProgression }: { onClose: () => void, userProgression: UserProgression }) {
       const router = useRouter()
 
       // update the current bucket => currentBucket + 1
       // seenCards to restore
       // Run the state update logic only once when the component is mounted
       useEffect(() => {
-        // Get the current bucket from localStorage or state
-        const currentBucketStored = parseInt(localStorage.getItem('currentBucket') || '1', 10);
-
-        // Update bucket only if it's not already the next one
-
-        const nextBucket = currentBucketStored + 1;
+        const nextBucket = userProgression.moveToNextBucket();
         console.log("CongratulationsPopup called, next bucket: ", nextBucket);
 
-        localStorage.setItem('currentBucket', JSON.stringify(nextBucket));
-        localStorage.setItem('seenCards', JSON.stringify([]));
+        UserProgression.saveToStorage(userProgression);
 
       }, []); // The empty dependency array ensures this effect runs only once when the component mounts
 
@@ -78,13 +73,13 @@ function CongratulationsPopup({ onClose }: { onClose: () => void }) {
     }
 
 export default function CardPage() {
+  const [userProgression, setUserProgression] = useState<UserProgression>(new UserProgression());
+  const [loading, setLoading] = useState<boolean>(true);
+
   const defaultLotSize = 100; // TODO: to be deleted
 
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
-  const [seenCards, setSeenCards] = useState(new Set<number>());
-  const [repetitionCards, setRepetitionCards] = useState(new Set<number>());
   const [progress, setProgress] = useState({ totalSeenCards: 0, totalCards: 0 });
-  const [currentBucketVar, setCurrentBucketVar] = useState(1);
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
   const [showCongratulations, setShowCongratulations] = useState(false)
@@ -96,47 +91,44 @@ export default function CardPage() {
   const [isMarkedForRevision, setIsMarkedForRevision] = useState(false)
 
   useEffect(() => {
+    const loadedUserProgression = UserProgression.loadFromLocalStorage();
+    if (loadedUserProgression) {
+        setUserProgression(loadedUserProgression);
+    }
+    const initOrLoadedUserProgression = (loadedUserProgression) ? loadedUserProgression : userProgression;
+
     const storedShowGuide = localStorage.getItem('showGuide');
-    const storedCurrentBucket = parseInt(localStorage.getItem('currentBucket') || '1', 10);
-    const storedSeenCards = new Set<number>(JSON.parse(localStorage.getItem('seenCards') || '[]'));
-    const storedRepetitionCards = new Set<number>(JSON.parse(localStorage.getItem('repetitionCards') || '[]'));
-    const initCurrentPosition = (storedSeenCards.size === 0) ? 0 : storedSeenCards.size - 1;
-    if (!storedShowGuide || (storedShowGuide && storedShowGuide === "true")) {
+    const initCurrentPosition = (initOrLoadedUserProgression.getCurrentBucket().seenCards.size === 0) ? 0 : initOrLoadedUserProgression.getCurrentBucket().seenCards.size - 1;
+    /* if (!storedShowGuide || (storedShowGuide && storedShowGuide === "true")) {
       setCurrentGuideStep(0);
       setShowGuide(true);
-    }
+    }*/
 
-    console.log("storedCurrentBucket: ", storedCurrentBucket);
-    console.log("storedSeenCards: ", storedSeenCards);
     console.log("currentPosition: ", initCurrentPosition);
-    setSeenCards(storedSeenCards);
-    setCurrentBucketVar(storedCurrentBucket);
-    setRepetitionCards(storedRepetitionCards);
     setCurrentPosition(initCurrentPosition);
 
-    firstLoad(storedSeenCards, storedCurrentBucket, initCurrentPosition, storedRepetitionCards);
+    firstLoad(initOrLoadedUserProgression,
+              initCurrentPosition);
   }, [])
 
-  const firstLoad = async (seenCards: Set<number>, storedBucket: Int, currentPosition: Int, repetitionCards: Set<number>) => {
+  const firstLoad = async (userProgression: UserProgression, currentPosition: Int) => {
     let data = null
-    if (seenCards.size > 0) {
-      data = await fetchLastCard(seenCards);
+    if (userProgression.getCurrentBucket().seenCards.size > 0) {
+      data = await fetchLastCard(userProgression.getCurrentBucket().seenCards);
     } else {
-      data = await fetchRandomCard(seenCards, storedBucket);
+      data = await fetchRandomCard(userProgression.getCurrentBucket().seenCards, userProgression.currentBucketID, userProgression.getCurrentBucket().revisionCards);
+      userProgression.getCurrentBucket().addSeenCard(data.card.id);
+      UserProgression.saveToStorage(userProgression);
     }
-    display(data, currentPosition, seenCards, repetitionCards);
+    display(data, currentPosition, userProgression.getCurrentBucket().revisionCards);
+    setLoading(false);
   }
 
-  const display = (data, currentPosition, seenCards, repetitionCards) => {
+  const display = (data, currentPosition, repetitionCards) => {
     // TODO - to delete the progress from the server response
     if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
       setCurrentCard(data.card);  // Set the current card in state
       setProgress({ totalSeenCards: currentPosition + 1, totalCards: defaultLotSize });  // Update progress if available
-
-      const updatedSeenCards = new Set(seenCards);  // Avoid mutating seenCards directly
-      updatedSeenCards.add(data.card.id);  // Add the current card's ID to the seen cards set
-      setSeenCards(updatedSeenCards);  // Update seenCards state
-      localStorage.setItem('seenCards', JSON.stringify([...updatedSeenCards]));  // Save updated seen cards to localStorage
 
       // check if the card is marked for revision or not
       repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
@@ -157,7 +149,6 @@ export default function CardPage() {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = "en-US" // Set the language to English
-      utterance.rate = 0.5 // Slightly slower rate for clarity
       window.speechSynthesis.speak(utterance);
     }
   }, [currentCard])
@@ -165,23 +156,31 @@ export default function CardPage() {
   const nextCard = async () => {
     // if currentPosition is last of seenCards => fetch random card
     // else currentPosition + 1 + fetchCard + display
+    console.log(currentPosition == userProgression.getCurrentBucket().seenCards.size - 1);
+    console.log("currentPosition: ", currentPosition);
+    console.log("userProgression.getCurrentBucket().seenCards.size: ", userProgression.getCurrentBucket().seenCards.size);
 
     if (currentPosition === defaultLotSize - 1) {
         setShowCongratulations(true);
-    } else if (currentPosition == seenCards.size - 1) {
-        const data = await fetchRandomCard(seenCards, currentBucketVar, repetitionCards);
+    } else if (currentPosition == userProgression.getCurrentBucket().seenCards.size - 1) {
+        const data = await fetchRandomCard(userProgression.getCurrentBucket().seenCards,
+                                           userProgression.currentBucketID,
+                                           userProgression.getCurrentBucket().revisionCards);
 
         const newCardPosition = currentPosition + 1;
         setCurrentPosition(newCardPosition);
-        display(data, newCardPosition, seenCards, repetitionCards);
+        display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
+
+        userProgression.getCurrentBucket().addSeenCard(data.card.id);
+        UserProgression.saveToStorage(userProgression);
     } else {
         const newCardPosition = currentPosition + 1;
         setCurrentPosition(newCardPosition);
-        const cardId = Array.from(seenCards)[newCardPosition];
+        const cardId = Array.from(userProgression.getCurrentBucket().seenCards)[newCardPosition];
 
-        const data = await fetchCard(cardId, seenCards, repetitionCards);
+        const data = await fetchCard(cardId, userProgression.getCurrentBucket().seenCards, userProgression.getCurrentBucket().revisionCards);
 
-        display(data, newCardPosition, seenCards, repetitionCards);
+        display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
     }
   }
 
@@ -189,11 +188,13 @@ export default function CardPage() {
     // currentPosition - 1 + fetchCard + display
     const newCardPosition = currentPosition - 1;
     setCurrentPosition(newCardPosition);
-    const cardId = Array.from(seenCards)[newCardPosition];
+    const cardId = Array.from(userProgression.getCurrentBucket().seenCards)[newCardPosition];
 
-    const data = await fetchCard(cardId, seenCards, repetitionCards);
+    const data = await fetchCard(cardId, userProgression.getCurrentBucket().seenCards, userProgression.getCurrentBucket().revisionCards);
 
-    display(data, newCardPosition, seenCards, repetitionCards);
+    display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
+
+    UserProgression.saveToStorage(userProgression);
   }
 
   const fetchLastCard = async (seenCards: Set<number>) => {
@@ -235,25 +236,14 @@ export default function CardPage() {
     // if !isMarkedForRevision => mark for revision + remove from the repetitionCards
 
     if (currentCard?.id) {
-
       if (isMarkedForRevision) {
         // if isMarkedForRevision => unmark for revision + remove from the repetitionCards
-        const updatedRepetitionCards = new Set(repetitionCards);
-        updatedRepetitionCards.delete(currentCard.id);
-        setRepetitionCards(updatedRepetitionCards);
-        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
-
-        setIsMarkedForRevision(!isMarkedForRevision);
-        console.log("Card unmarked for revision: ", currentCard.id);
+        userProgression.getCurrentBucket().deleteRevisionCard(currentCard.id);
       } else {
-        const updatedRepetitionCards = new Set(repetitionCards);
-        updatedRepetitionCards.add(currentCard.id);
-        setRepetitionCards(updatedRepetitionCards);
-        localStorage.setItem('repetitionCards', JSON.stringify([...updatedRepetitionCards]));
-
-        setIsMarkedForRevision(!isMarkedForRevision);
-        console.log("Card marked for revision: ", currentCard.id);
+        userProgression.getCurrentBucket().addRevisionCard(currentCard.id);
       }
+      setIsMarkedForRevision(!isMarkedForRevision);
+      UserProgression.saveToStorage(userProgression);
     }
   }
 
@@ -281,6 +271,18 @@ export default function CardPage() {
       </PopoverContent>
     </Popover>
   )
+
+  if (loading) {
+    return (
+      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-white bg-opacity-70 z-50">
+        <img
+          src="Vanilla@1x-1.0s-280px-250px.svg"
+          alt="Loading"
+          className="max-w-full max-h-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -325,11 +327,29 @@ export default function CardPage() {
 
               {/* Conditionally render CardContent if currentCard is available */}
               <CardContent className="space-y-4">
-                <div
-                  className={`bg-blue-50 p-3 rounded-lg relative ${showGuide && guideSteps[currentGuideStep].target === "frenchPhrase" ? "z-50" : ""}`}
-                  id="frenchPhrase"
-                >
-                  <p className="text-base text-blue-800">{currentCard.example_vi}</p>
+                {/* New Translation Challenge Design */}
+                <div className="relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-theme-primary text-white px-4 py-1 rounded-full text-sm font-medium shadow-sm z-10">
+                    Your Challenge
+                  </div>
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 pt-5 border border-theme-primary/20 shadow-sm">
+                    <div className="flex flex-col items-start">
+                      <div className="flex items-center w-full mb-2">
+                        <div className="bg-theme-primary rounded-full p-2 mr-3">
+                          <LightBulbIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <p className="text-theme-primary font-medium">Try to translate this phrase:</p>
+                      </div>
+                      <div className="w-full pl-2">
+                        <div
+                          className={`bg-white p-3 rounded-lg relative ${showGuide && guideSteps[currentGuideStep].target === "frenchPhrase" ? "z-50" : ""} shadow-sm`}
+                          id="frenchPhrase"
+                        >
+                          <p className="text-base text-theme-text-primary">{currentCard.example_vi}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {renderGuidePopover(guideSteps[4])}
                 <div
@@ -353,7 +373,7 @@ export default function CardPage() {
                                         <div className="absolute inset-0 flex items-center justify-center">
                                           <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
                                             <EyeIcon className="w-5 h-5 text-green-600" />
-                                            <span className="text-sm font-medium text-green-600">Tap to reveal</span>
+                                            <span className="text-sm font-medium text-green-600">Check your answer</span>
                                           </div>
                                         </div>
                                       )}
@@ -406,7 +426,7 @@ export default function CardPage() {
           </CardFooter>
         </Card>
       </main>
-      {showCongratulations && <CongratulationsPopup />}
+      {showCongratulations && <CongratulationsPopup userProgression={userProgression}/>}
     </div>
   )
 }
