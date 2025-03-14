@@ -1,4 +1,4 @@
-import { Bucket } from './Bucket';
+import { Bucket } from "@/types/Bucket"
 
 export class UserProgression {
   lang: string;
