@@ -196,7 +196,7 @@ export class UserProgression {
           newModel.progression.push(createBucket(i, bucket.cards, oldModel.seenCards, false, null));
         } else {
           // Otherwise, create empty buckets with no seenCards
-          newModel.progression.push(createBucket(i, bucket.cards, [], true, 100 - bucket.cards.size));
+          newModel.progression.push(createBucket(i, bucket.cards, [], true, 100 - bucket.cards.length));
         }
       }
 
