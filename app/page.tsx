@@ -112,7 +112,7 @@ export default function PresentationPage() {
             </nav>
 
             <Button asChild className="bg-theme-primary hover:bg-theme-secondary text-white">
-              <Link href="/app">Get Started</Link>
+              <Link href="/home">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function PresentationPage() {
 
               <motion.div variants={fadeIn} className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="bg-theme-primary hover:bg-theme-secondary text-white">
-                  <Link href="/app">Start Learning Now</Link>
+                  <Link href="/home">Start Learning Now</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="group">
                   <Link href="#how-it-works" className="flex items-center">
@@ -674,7 +674,7 @@ export default function PresentationPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Button asChild size="lg" className="bg-white text-theme-primary hover:bg-gray-100">
-              <Link href="/app">Get Started Now</Link>
+              <Link href="/home">Get Started Now</Link>
             </Button>
           </motion.div>
         </div>
