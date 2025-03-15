@@ -160,7 +160,7 @@ export class UserProgression {
           new Set(cards),
           0,
           new Set(seenCards),
-          lastScore ?? 100,
+          lastScore,
           isCompleted
         );
       };
