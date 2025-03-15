@@ -12,7 +12,7 @@ export class Bucket {
     revisionCurrentCardID: number = 0,
     seenCards: Set<number> = new Set(),
     lastScore: number | null = null,
-    isCompleted: false
+    isCompleted: boolean = false
   ) {
     this.id = id;
     this.revisionCards = revisionCards;

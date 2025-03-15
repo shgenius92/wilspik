@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon, EyeIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
-import type { Card as CardType, GuideStep } from "@/types/card"
+import type { Card as CardType } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
@@ -38,7 +38,7 @@ export default function CardPage() {
   const [userProgression, setUserProgression] = useState<UserProgression>(new UserProgression());
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
   const [isBlurred, setIsBlurred] = useState(true)
@@ -54,10 +54,10 @@ export default function CardPage() {
     const storedRepetitionCards = initOrLoadedUserProgression.getAllRevisionCards();
 
     // TODO rename RevisionCurrentCard to CurrentCardId
-    const storedRevisionCurrentCard = initOrLoadedUserProgression.currentRevisionCardID;
+    const storedRevisionCurrentCard: number | null = initOrLoadedUserProgression.currentRevisionCardID;
 
     let parsedRevisionCurrentCard = null;
-    let newCurrentPosition: Int = null;
+    let newCurrentPosition: number = -1;
     // case when storedRevisionCurrentCard == null and storedRepetitionCards == null => null (default) value
       // no currentPosition == null (default) value
     // case when storedRevisionCurrentCard == null and storedRepetitionCards !== null => possible at the beginning
@@ -66,9 +66,9 @@ export default function CardPage() {
     // case when storedRevisionCurrentCard !== null and storedRepetitionCards !== null => possible
       // currentPosition == getCardPosition(storedRepetitionCards, parsedRevisionCurrentCard);
 
-    if (storedRevisionCurrentCard && storedRevisionCurrentCard !== "null" && storedRepetitionCards) {
+    if (storedRevisionCurrentCard && storedRevisionCurrentCard !== null && storedRepetitionCards) {
         console.log('case when storedRevisionCurrentCard !== null and storedRepetitionCards !== null');
-        parsedRevisionCurrentCard = parseInt(storedRevisionCurrentCard, 10);
+        parsedRevisionCurrentCard = storedRevisionCurrentCard;
         newCurrentPosition = getCardPosition(storedRepetitionCards, parsedRevisionCurrentCard);
     } else {
         if (storedRepetitionCards) {
@@ -83,7 +83,7 @@ export default function CardPage() {
     console.log('parsedRevisionCurrentCard: ', parsedRevisionCurrentCard);
     console.log('newCurrentPosition: ', newCurrentPosition);
 
-    if (newCurrentPosition != null && parsedRevisionCurrentCard != null)
+    if (newCurrentPosition != -1 && parsedRevisionCurrentCard != null)
         firstLoad(parsedRevisionCurrentCard, newCurrentPosition, storedRepetitionCards);
     else
         setLoading(false);
@@ -91,16 +91,16 @@ export default function CardPage() {
     setCurrentPosition(newCurrentPosition);
   }, [])
 
-  const firstLoad = async (cardId: Int, currentPosition: Int, repetitionCards: Set<number>) => {
+  const firstLoad = async (cardId: number, currentPosition: number, repetitionCards: Set<number>) => {
     let data = await fetchCard(cardId);
-    display(data, currentPosition, repetitionCards);
+    display(data.card, currentPosition, repetitionCards);
     setLoading(false);
   }
 
-  const display = (data, currentPosition, repetitionCards) => {
+  const display = (card: CardType, currentPosition: number, repetitionCards: Set<number>) => {
     // TODO - to delete the progress from the server response
-    if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
-      setCurrentCard(data.card);  // Set the current card in state
+    if (card) {  // Only proceed if data is not null (e.g., all cards read scenario)
+      setCurrentCard(card);  // Set the current card in state
 
       setIsMarkedForRevision(true);
       setIsBlurred(true);
@@ -126,7 +126,7 @@ export default function CardPage() {
       const data = await fetchCard(nextCardId);
 
 
-      display(data, nextPosition, repetitionCards);
+      display(data.card, nextPosition, repetitionCards);
 
       setCurrentPosition(nextPosition);
 
@@ -143,7 +143,7 @@ export default function CardPage() {
     const nextCardId = Array.from(repetitionCards)[newCardPosition];
 
     const data = await fetchCard(nextCardId);
-    display(data, newCardPosition, repetitionCards);
+    display(data.card, newCardPosition, repetitionCards);
 
     setCurrentPosition(newCardPosition);
 
@@ -151,7 +151,7 @@ export default function CardPage() {
     UserProgression.saveToStorage(userProgression);
   }
 
-  const fetchCard = async (cardId: Int) => {
+  const fetchCard = async (cardId: number) => {
       console.log("fetchCard: id - ", cardId);
       const response = await fetch(`/api/getCard?id=${cardId}`, {
         method: 'GET',
@@ -179,7 +179,7 @@ export default function CardPage() {
           // compute the nextPosition
           let nextPosition = currentPosition;
           if (updatedRepetitionCards.size === 0) {
-            nextPosition = null;
+            nextPosition = -1;
           } else {
             if (nextPosition !== null && nextPosition >= updatedRepetitionCards.size) {
               nextPosition = 0;
@@ -191,10 +191,10 @@ export default function CardPage() {
 
           // fetch card
           let nextCardId = null;
-          if (nextPosition != null) {
+          if (nextPosition != -1) {
             nextCardId = Array.from(updatedRepetitionCards)[nextPosition];
             const data = await fetchCard(nextCardId);
-            display(data, nextPosition, updatedRepetitionCards);
+            display(data.card, nextPosition, updatedRepetitionCards);
             userProgression.setCurrentRevisionCardID(data.card.id);
           } else {
             setCurrentCard(null);

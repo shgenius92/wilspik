@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { AcademicCapIcon, PlayIcon, ArrowPathIcon, BookOpenIcon, SpeakerWaveIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
-import { getUserProgress, getCurrentBucket } from "../lib/api"
-import { getRandomPronunciationTip } from "../lib/pronunciationTips"
+import { getRandomPronunciationTip } from "@/lib/pronunciationTips"
 import { SlidingMessages } from "@/components/SlidingMessages"
 import { Header } from "@/components/Header"
 import { Badge } from "@/components/ui/badge"
@@ -197,6 +196,10 @@ export default function HomePage() {
                             isUnlocked={false}
                             totalCards={100}
                             completedCards={0}
+                            isCompleted={false}
+                            isCurrentBucket={false}
+                            restartClickHandler={restartClickHandler}
+                            resumeClickHandler={resumeClickHandler}
                           />
                         </div>
                       ))}

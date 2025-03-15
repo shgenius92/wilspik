@@ -9,9 +9,4 @@ export interface Card {
   vi: string
 }
 
-export interface GuideStep {
-  target: string
-  content: string
-  placement: "top" | "bottom" | "left" | "right"
-}
 

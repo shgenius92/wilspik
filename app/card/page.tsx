@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon,
   EyeIcon, LightBulbIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
-import type { Card as CardType, GuideStep } from "@/types/card"
+import type { Card as CardType } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
@@ -14,34 +14,6 @@ import { Header } from "@/components/Header"
 import { UserProgression } from "@/types/UserProgression"
 
 const ReactConfetti = dynamic(() => import("react-confetti"), { ssr: false })
-
-const guideSteps: GuideStep[] = [
-  { target: "", content: "Voici un guide pour vous accompagner et vous expliquer les règles ", placement: "bottom" },
-  { target: "englishWord", content: "Le mot en Anglais à mémoriser ", placement: "bottom" },
-  { target: "pronunciation", content: "Comment ça se prononce ?", placement: "bottom" },
-  { target: "frenchTranslation", content: "La traduction en Français", placement: "bottom" },
-  {
-    target: "frenchPhrase",
-    content: "Lisez cette phrase en français à haute voix et essayez de la traduire en anglais à haute voix également",
-    placement: "bottom",
-  },
-  {
-    target: "englishPhrase",
-    content: "La traduction de la phrase en Anglais",
-    placement: "bottom",
-  },
-  {
-    target: "previousCard",
-    content: "Retournez sur la carte précédente",
-    placement: "bottom",
-  },
-  { target: "markRevision", content: "Marquez la phrase pour révision si vous n'avez pas réussi la traduction", placement: "bottom" },
-  {
-    target: "nextCard",
-    content: "Passez à la prochaine carte",
-    placement: "bottom",
-  }
-]
 
 function CongratulationsPopup({ onClose, userProgression }: { onClose: () => void, userProgression: UserProgression }) {
       const router = useRouter()
@@ -78,15 +50,13 @@ export default function CardPage() {
 
   const defaultLotSize = 100; // TODO: to be deleted
 
-  const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [progress, setProgress] = useState({ totalSeenCards: 0, totalCards: 0 });
   const [currentPosition, setCurrentPosition] = useState<number>(0);
 
   const [showCongratulations, setShowCongratulations] = useState(false)
 
-  const [currentGuideStep, setCurrentGuideStep] = useState(0)
   const [isBlurred, setIsBlurred] = useState(true)
-  const [showGuide, setShowGuide] = useState(false)
   const elementRefs = useRef<{ [key: string]: HTMLElement | null }>({})
   const [isMarkedForRevision, setIsMarkedForRevision] = useState(false)
 
@@ -97,12 +67,7 @@ export default function CardPage() {
     }
     const initOrLoadedUserProgression = (loadedUserProgression) ? loadedUserProgression : userProgression;
 
-    const storedShowGuide = localStorage.getItem('showGuide');
     const initCurrentPosition = (initOrLoadedUserProgression.getCurrentBucket().seenCards.size === 0) ? 0 : initOrLoadedUserProgression.getCurrentBucket().seenCards.size - 1;
-    /* if (!storedShowGuide || (storedShowGuide && storedShowGuide === "true")) {
-      setCurrentGuideStep(0);
-      setShowGuide(true);
-    }*/
 
     console.log("currentPosition: ", initCurrentPosition);
     setCurrentPosition(initCurrentPosition);
@@ -111,7 +76,7 @@ export default function CardPage() {
               initCurrentPosition);
   }, [])
 
-  const firstLoad = async (userProgression: UserProgression, currentPosition: Int) => {
+  const firstLoad = async (userProgression: UserProgression, currentPosition: number) => {
     let data = null
     if (userProgression.getCurrentBucket().seenCards.size > 0) {
       data = await fetchLastCard(userProgression.getCurrentBucket().seenCards);
@@ -120,18 +85,18 @@ export default function CardPage() {
       userProgression.getCurrentBucket().addSeenCard(data.card.id);
       UserProgression.saveToStorage(userProgression);
     }
-    display(data, currentPosition, userProgression.getCurrentBucket().revisionCards);
+    display(data.card, currentPosition, userProgression.getCurrentBucket().revisionCards);
     setLoading(false);
   }
 
-  const display = (data, currentPosition, repetitionCards) => {
+  const display = (card: CardType, currentPosition: number, repetitionCards: Set<number>) => {
     // TODO - to delete the progress from the server response
-    if (data) {  // Only proceed if data is not null (e.g., all cards read scenario)
-      setCurrentCard(data.card);  // Set the current card in state
+    if (card) {  // Only proceed if data is not null (e.g., all cards read scenario)
+      setCurrentCard(card);  // Set the current card in state
       setProgress({ totalSeenCards: currentPosition + 1, totalCards: defaultLotSize });  // Update progress if available
 
       // check if the card is marked for revision or not
-      repetitionCards.has(data.card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
+      repetitionCards.has(card.id) ? setIsMarkedForRevision(true) : setIsMarkedForRevision(false);
       setIsBlurred(true);
     }
   }
@@ -139,12 +104,12 @@ export default function CardPage() {
   const handleResponseClick = () => {
     if (isBlurred) {
         setIsBlurred(!isBlurred);
-    } else {
-        textToSpeech(currentCard?.example_en);
+    } else if (currentCard){
+        textToSpeech(currentCard.example_en);
     }
   }
 
-  const textToSpeech = useCallback((text) => {
+  const textToSpeech = useCallback((text: string) => {
     // TODO - Check Speech synthesis support by the using browser
     if (typeof window !== "undefined" && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(text)
@@ -169,7 +134,7 @@ export default function CardPage() {
 
         const newCardPosition = currentPosition + 1;
         setCurrentPosition(newCardPosition);
-        display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
+        display(data.card, newCardPosition, userProgression.getCurrentBucket().revisionCards);
 
         userProgression.getCurrentBucket().addSeenCard(data.card.id);
         UserProgression.saveToStorage(userProgression);
@@ -178,9 +143,9 @@ export default function CardPage() {
         setCurrentPosition(newCardPosition);
         const cardId = Array.from(userProgression.getCurrentBucket().seenCards)[newCardPosition];
 
-        const data = await fetchCard(cardId, userProgression.getCurrentBucket().seenCards, userProgression.getCurrentBucket().revisionCards);
+        const data = await fetchCard(cardId);
 
-        display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
+        display(data.card, newCardPosition, userProgression.getCurrentBucket().revisionCards);
     }
   }
 
@@ -190,7 +155,7 @@ export default function CardPage() {
     setCurrentPosition(newCardPosition);
     const cardId = Array.from(userProgression.getCurrentBucket().seenCards)[newCardPosition];
 
-    const data = await fetchCard(cardId, userProgression.getCurrentBucket().seenCards, userProgression.getCurrentBucket().revisionCards);
+    const data = await fetchCard(cardId);
 
     display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
 
@@ -199,10 +164,10 @@ export default function CardPage() {
 
   const fetchLastCard = async (seenCards: Set<number>) => {
       const lastSeenCardId = Array.from(seenCards)[seenCards.size - 1];
-      return await fetchCard(lastSeenCardId, seenCards);
+      return await fetchCard(lastSeenCardId);
   }
 
-  const fetchCard = async (cardId: Int) => {
+  const fetchCard = async (cardId: number) => {
       console.log("fetchCard: id - ", cardId);
       const response = await fetch(`/api/getCard?id=${cardId}`, {
         method: 'GET',
@@ -212,6 +177,10 @@ export default function CardPage() {
       console.log('fetchcard: data - ', data);
 
       return data;
+  }
+
+  const onClosePopup = () => {
+    setShowCongratulations(false);  // Hide the congratulations popup
   }
 
   const fetchRandomCard = async (seenCards: Set<number>, currentBucket: number, repetitionCards: Set<number>) => {
@@ -247,31 +216,6 @@ export default function CardPage() {
     }
   }
 
-  const handleGuideNext = () => {
-    if (currentGuideStep < guideSteps.length - 1) {
-      setCurrentGuideStep(currentGuideStep + 1)
-    } else {
-      setShowGuide(false);
-      localStorage.setItem('showGuide', 'false');
-    }
-  }
-
-  const renderGuidePopover = (step: GuideStep) => (
-    <Popover open={showGuide && guideSteps[currentGuideStep].target === step.target}>
-      <PopoverTrigger asChild>
-        <div ref={(el) => (elementRefs.current[step.target] = el)} />
-      </PopoverTrigger>
-      <PopoverContent side={step.placement} className="w-64 p-4 z-50">
-        <div className="relative">
-          <p>{step.content}</p>
-          <Button size="sm" onClick={handleGuideNext} className="mt-2">
-            {currentGuideStep === guideSteps.length - 1 ? "Finish" : "Next"}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-
   if (loading) {
     return (
       <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-white bg-opacity-70 z-50">
@@ -288,7 +232,6 @@ export default function CardPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center p-4 relative">
-        {showGuide && <div className="absolute inset-0 bg-gray-900 bg-opacity-50 z-40 pointer-events-none" />}
         <Card className="w-full max-w-sm relative">
           <div className="absolute top-2 left-2 bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-800">
             {progress.totalSeenCards} / {progress.totalCards}
@@ -299,15 +242,13 @@ export default function CardPage() {
             <>
               <CardHeader className="text-center space-y-2 mt-8">
                 <h2
-                  className={`text-2xl font-bold text-gray-900 relative ${showGuide && guideSteps[currentGuideStep].target === "englishWord" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  className={`text-2xl font-bold text-gray-900 relative`}
                   id="englishWord"
                 >
                   {currentCard.word} {currentCard.type}
                 </h2>
-                {renderGuidePopover(guideSteps[0])}
-                {renderGuidePopover(guideSteps[1])}
                 <div
-                  className={`flex items-center justify-center space-x-2 text-gray-600 relative ${showGuide && guideSteps[currentGuideStep].target === "pronunciation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  className={`flex items-center justify-center space-x-2 text-gray-600 relative`}
                   id="pronunciation"
                   onClick={() => textToSpeech(currentCard.word)}
                 >
@@ -315,14 +256,12 @@ export default function CardPage() {
                   <span className="text-sm">{currentCard.ipa}</span>
                 </div>
 
-                {renderGuidePopover(guideSteps[2])}
                 <p
-                  className={`text-lg text-gray-700 relative ${showGuide && guideSteps[currentGuideStep].target === "frenchTranslation" ? "z-50 bg-blue-50 p-2 rounded" : ""}`}
+                  className={`text-lg text-gray-700 relative`}
                   id="frenchTranslation"
                 >
                   {currentCard.vi}
                 </p>
-                {renderGuidePopover(guideSteps[3])}
               </CardHeader>
 
               {/* Conditionally render CardContent if currentCard is available */}
@@ -342,7 +281,7 @@ export default function CardPage() {
                       </div>
                       <div className="w-full pl-2">
                         <div
-                          className={`bg-white p-3 rounded-lg relative ${showGuide && guideSteps[currentGuideStep].target === "frenchPhrase" ? "z-50" : ""} shadow-sm`}
+                          className={`bg-white p-3 rounded-lg relative shadow-sm`}
                           id="frenchPhrase"
                         >
                           <p className="text-base text-theme-text-primary">{currentCard.example_vi}</p>
@@ -351,9 +290,8 @@ export default function CardPage() {
                     </div>
                   </div>
                 </div>
-                {renderGuidePopover(guideSteps[4])}
                 <div
-                  className={`bg-green-50 p-3 rounded-lg space-y-2 relative ${showGuide && guideSteps[currentGuideStep].target === "englishPhrase" ? "z-50" : ""}`}
+                  className={`bg-green-50 p-3 rounded-lg space-y-2 relative`}
                   id="englishPhrase"
                   onClick={handleResponseClick}
                 >
@@ -379,7 +317,6 @@ export default function CardPage() {
                                       )}
                                     </div>
                 </div>
-                {renderGuidePopover(guideSteps[5])}
               </CardContent>
             </>
           ) : (
@@ -390,19 +327,18 @@ export default function CardPage() {
           <CardFooter className="flex justify-between items-center mt-4">
             <div
               id="previousCard"
-              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "previousCard" ? "z-50" : ""}`}
+              className={`relative`}
             >
-              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0 || showGuide === true}>
+              <Button variant="outline" size="sm" onClick={previousCard} disabled={currentPosition === 0}>
                 <ChevronLeftIcon />
               </Button>
             </div>
 
-            {renderGuidePopover(guideSteps[6])}
             <div
               id="markRevision"
-              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "markRevision" ? "z-50" : ""}`}
+              className={`relative`}
             >
-              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision} disabled={showGuide === true}>
+              <Button variant="outline" size="sm" className="flex-1 mx-2" onClick={handleMarkForRevision}>
                 {isMarkedForRevision ? (
                   <BookmarkSolidIcon className="w-5 h-5 mr-2 text-blue-600" />
                 ) : (
@@ -411,22 +347,20 @@ export default function CardPage() {
                 Mark for Revision
               </Button>
             </div>
-            {renderGuidePopover(guideSteps[7])}
 
             <div
               id="nextCard"
-              className={`relative ${showGuide && guideSteps[currentGuideStep].target === "nextCard" ? "z-50" : ""}`}
+              className={`relative`}
             >
-              <Button onClick={nextCard} disabled={showGuide === true}>
+              <Button onClick={nextCard}>
                 {currentPosition === defaultLotSize - 1 ? "Finish" : "Next"}
                 <ChevronRightIcon className="w-5 h-5 ml-2" />
               </Button>
             </div>
-            {renderGuidePopover(guideSteps[8])}
           </CardFooter>
         </Card>
       </main>
-      {showCongratulations && <CongratulationsPopup userProgression={userProgression}/>}
+      {showCongratulations && <CongratulationsPopup onClose={onClosePopup} userProgression={userProgression}/>}
     </div>
   )
 }

@@ -26,7 +26,7 @@ interface BucketCardProps {
   completedCards: number
   lastScore?: number | null
   markedForRevision?: number
-  isCompleted: boolean
+  isCompleted: Boolean
   isCurrentBucket: boolean
   restartClickHandler: (bucketID: number) => void;
   resumeClickHandler: (bucketID: number) => void;
@@ -52,7 +52,7 @@ export function BucketCard({
     }
   };
 
-  const handleRevisionClick = (bucketId: number) => {
+  const handleRevisionClick = () => {
   }
 
   const handleResume = () => {
@@ -119,7 +119,7 @@ export function BucketCard({
                   <Button
                     variant="ghost"
                     className="w-full flex items-center justify-center space-x-1 text-amber-600 hover:bg-amber-50 hover:text-amber-700 p-0.5 h-auto min-h-0"
-                    onClick={handleRevisionClick}
+                    onClick={() => handleRevisionClick()}
                   >
                     <BookmarkIcon className="w-3 h-3" />
                     <span className="text-xs">{markedForRevision} marked for revision</span>
@@ -132,7 +132,7 @@ export function BucketCard({
                     variant="outline"
                     size="sm"
                     className="text-blue-600 border-blue-300 hover:bg-blue-50 flex items-center space-x-1 h-7 text-xs"
-                    onClick={() => handleRestart(id)}
+                    onClick={() => handleRestart()}
                   >
                     <ArrowPathIcon className="w-3 h-3" />
                     <span>Restart</span>
@@ -154,7 +154,7 @@ export function BucketCard({
                       <Button
                         size="sm"
                         className={`${isCurrentBucket ? "bg-theme-primary hover:bg-theme-secondary" : "bg-theme-text-muted"} text-white flex items-center space-x-1 h-8 px-4 shadow-md hover:shadow-lg transition-all duration-300`}
-                        onClick={() => handleResume(id)}
+                        onClick={() => handleResume()}
                       >
                         <PlayIcon className="w-3 h-3 mr-1" />
                         <span>Resume</span>
@@ -165,7 +165,7 @@ export function BucketCard({
                   <Button
                     variant="ghost"
                     className="absolute bottom-2 left-2 space-x-1 text-amber-600 hover:bg-amber-50 hover:text-amber-700 p-0.5 h-auto min-h-0"
-                    onClick={handleRevisionClick}
+                    onClick={() => handleRevisionClick()}
                   >
                     <BookmarkIcon className="w-3 h-3" />
                     <span className="text-xs">{markedForRevision}</span>

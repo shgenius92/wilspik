@@ -6,7 +6,7 @@ export class UserProgression {
   currentBucketID: number;
   currentRevisionCardID: number | null = null;
 
-  constructor(lang: string = "FR", progression: Bucket[] = [new Bucket(1)], currentBucketID: number = 1, currentRevisionCardID) {
+  constructor(lang: string = "FR", progression: Bucket[] = [new Bucket(1)], currentBucketID: number = 1, currentRevisionCardID = null) {
     this.lang = lang;
     this.progression = progression
     this.currentBucketID = currentBucketID;
@@ -29,7 +29,7 @@ export class UserProgression {
     };
   }
 
-  setCurrentRevisionCardID(cardID: number) {
+  setCurrentRevisionCardID(cardID: number | null) {
     this.currentRevisionCardID = cardID;
   }
 
@@ -104,10 +104,16 @@ export class UserProgression {
       return deserializedUserProgression;
     } else {
       const getOldModelFromLocalStorage = () => {
-        const currentBucket = JSON.parse(localStorage.getItem('currentBucket'));
-        const repetitionCards = JSON.parse(localStorage.getItem('repetitionCards'));
-        const revisionCurrentCard = JSON.parse(localStorage.getItem('revision.currentCard'));
-        const seenCards = JSON.parse(localStorage.getItem('seenCards'));
+        const currentBucketStr = localStorage.getItem('currentBucket');
+          const repetitionCardsStr = localStorage.getItem('repetitionCards');
+          const revisionCurrentCardStr = localStorage.getItem('revision.currentCard');
+          const seenCardsStr = localStorage.getItem('seenCards');
+
+          // Check for null before parsing
+          const currentBucket = currentBucketStr ? JSON.parse(currentBucketStr) : null;
+          const repetitionCards = repetitionCardsStr ? JSON.parse(repetitionCardsStr) : null;
+          const revisionCurrentCard = revisionCurrentCardStr ? JSON.parse(revisionCurrentCardStr) : null;
+          const seenCards = seenCardsStr ? JSON.parse(seenCardsStr) : null;
 
         // If any of the old model fields are missing, log an error and return null
         if (currentBucket === null || repetitionCards === null || revisionCurrentCard === null || seenCards === null) {
@@ -128,7 +134,7 @@ export class UserProgression {
       const oldModel = getOldModelFromLocalStorage();
       if (!oldModel) {
         console.log("Exit if the old model doesn't exist");
-        return;
+        return null;
       } else {
         console.log("Old model exists: ", oldModel);
       }
@@ -142,19 +148,25 @@ export class UserProgression {
       );
 
       // Function to create a bucket
-      const createBucket = (bucketId, cards = [], seenCards = [], isCompleted = false, lastScore = 100) => {
+      const createBucket = (
+        bucketId: number,
+        cards: number[] = [],
+        seenCards: number[] = [],
+        isCompleted: boolean = false,
+        lastScore: number | null = 100
+      ): Bucket => {
         return new Bucket(
           bucketId,
           new Set(cards),
           0,
           new Set(seenCards),
-          lastScore,
+          lastScore ?? 100,
           isCompleted
         );
       };
 
       // Distribute repetitionCards into buckets based on card number ranges (1-100, 101-200, etc.)
-      const distributeCardsIntoBuckets = (repetitionCards, numBuckets) => {
+      const distributeCardsIntoBuckets = (repetitionCards: Set<number>, numBuckets: number) => {
         const buckets = [];
 
         // Loop through each bucket (1 to numBuckets)
@@ -163,7 +175,7 @@ export class UserProgression {
           const end = i * 100;
 
           // Get all cards that fit within this bucket range
-          const cardsInBucket = repetitionCards.filter(card => card >= start && card <= end);
+          const cardsInBucket = Array.from(repetitionCards).filter(card => card >= start && card <= end);
 
           // Push the bucket with its respective cards
           buckets.push({ bucketId: i, cards: cardsInBucket });
