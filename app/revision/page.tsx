@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon, EyeIcon } from "@heroicons/react/24/outline"
+import { SpeakerWaveIcon, BookmarkIcon, ChevronRightIcon, ChevronLeftIcon, EyeIcon, LightBulbIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid"
 import type { Card as CardType } from "@/types/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -107,8 +107,21 @@ export default function CardPage() {
     }
   }
 
-  const handlePhraseClick = () => {
-    setIsBlurred(!isBlurred);
+  const textToSpeech = useCallback((text: string) => {
+    // TODO - Check Speech synthesis support by the using browser
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = "en-US" // Set the language to English
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [currentCard])
+
+  const handleResponseClick = () => {
+    if (isBlurred) {
+        setIsBlurred(!isBlurred);
+    } else if (currentCard){
+        textToSpeech(currentCard.example_en);
+    }
   }
 
   const nextCard = async () => {
@@ -262,41 +275,58 @@ export default function CardPage() {
 
               {/* Conditionally render CardContent if currentCard is available */}
               <CardContent className="space-y-4">
-                <div
-                  className={`bg-blue-50 p-3 rounded-lg relative`}
-                  id="frenchPhrase"
-                >
-                  <p className="text-base text-blue-800">{currentCard.example_vi}</p>
-                </div>
-                <div
-                  className={`bg-green-50 p-3 rounded-lg space-y-2 relative`}
-                  id="englishPhrase"
-                  onClick={handlePhraseClick}
-                >
-
-                  <div className="relative">
-                                      <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
-                                        {currentCard.example_en}
-                                      </p>
-                                      <div
-                                        className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${
-                                          isBlurred ? "blur-sm" : ""
-                                        }`}
-                                      >
-                                        <SpeakerWaveIcon className="w-5 h-5" />
-                                        <span className="text-xs">{currentCard.ipa_example}</span>
+                              {/* New Translation Challenge Design */}
+                              <div className="relative">
+                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-theme-primary text-white px-4 py-1 rounded-full text-sm font-medium shadow-sm z-10">
+                                  Your Challenge
+                                </div>
+                                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 pt-5 border border-theme-primary/20 shadow-sm">
+                                  <div className="flex flex-col items-start">
+                                    <div className="flex items-center w-full mb-2">
+                                      <div className="bg-theme-primary rounded-full p-2 mr-3">
+                                        <LightBulbIcon className="w-5 h-5 text-white" />
                                       </div>
-                                      {isBlurred && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                          <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
-                                            <EyeIcon className="w-5 h-5 text-green-600" />
-                                            <span className="text-sm font-medium text-green-600">Check your answer</span>
-                                          </div>
-                                        </div>
-                                      )}
+                                      <p className="text-theme-primary font-medium">Try to translate this phrase:</p>
                                     </div>
-                </div>
-              </CardContent>
+                                    <div className="w-full pl-2">
+                                      <div
+                                        className={`bg-white p-3 rounded-lg relative shadow-sm`}
+                                        id="frenchPhrase"
+                                      >
+                                        <p className="text-base text-theme-text-primary">{currentCard.example_vi}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div
+                                className={`bg-green-50 p-3 rounded-lg space-y-2 relative`}
+                                id="englishPhrase"
+                                onClick={handleResponseClick}
+                              >
+                                <div className="relative">
+                                                    <p className={`text-base text-green-800 transition-all duration-300 ${isBlurred ? "blur-sm" : ""}`}>
+                                                      {currentCard.example_en}
+                                                    </p>
+                                                    <div
+                                                      className={`flex items-center space-x-2 text-green-600 transition-all duration-300 ${
+                                                        isBlurred ? "blur-sm" : ""
+                                                      }`}
+                                                    >
+                                                      <SpeakerWaveIcon className="w-5 h-5" />
+                                                      <span className="text-xs">{currentCard.ipa_example}</span>
+                                                    </div>
+                                                    {isBlurred && (
+                                                      <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="bg-white bg-opacity-90 px-4 py-2 rounded-full flex items-center space-x-2">
+                                                          <EyeIcon className="w-5 h-5 text-green-600" />
+                                                          <span className="text-sm font-medium text-green-600">Check your answer</span>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                              </div>
+                            </CardContent>
             </>
           ) : (
             // Display this message if no card is available

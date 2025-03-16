@@ -157,7 +157,7 @@ export default function CardPage() {
 
     const data = await fetchCard(cardId);
 
-    display(data, newCardPosition, userProgression.getCurrentBucket().revisionCards);
+    display(data.card, newCardPosition, userProgression.getCurrentBucket().revisionCards);
 
     UserProgression.saveToStorage(userProgression);
   }
