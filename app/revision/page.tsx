@@ -89,6 +89,10 @@ export default function CardPage() {
         setLoading(false);
 
     setCurrentPosition(newCurrentPosition);
+
+    // load voices
+    if (typeof window !== "undefined" && window.speechSynthesis)
+      window.speechSynthesis.getVoices()
   }, [])
 
   const firstLoad = async (cardId: number, currentPosition: number, repetitionCards: Set<number>) => {
@@ -107,14 +111,60 @@ export default function CardPage() {
     }
   }
 
-  const textToSpeech = useCallback((text: string) => {
-    // TODO - Check Speech synthesis support by the using browser
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = "en-US" // Set the language to English
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [currentCard])
+const textToSpeech = useCallback((text: string) => {
+      // List of preferred voices in order
+      const preferredVoices = [
+          "Emma", "Microsoft Ava", "Jenny", "Aria", "Michelle", "Ana", "Andrew", "Brian",
+          "Guy", "Eric", "Steffan", "Christopher", "Roger", "Sonia", "Libby", "Maisie",
+          "Ryan", "Thomas", "Natasha", "Hayley", "William", "Clara", "Heather", "Liam",
+          "Neerja", "Prabhat", "Emily", "Connor", "Leah", "Luke", "Yan", "Sam", "Asilia",
+          "Chilemba", "Molly", "Mitchell", "Ezinne", "Abeo", "Luna", "Wayne", "Imani",
+          "Elimu", "Apple Ava", "Zoe", "Allison", "Nicky", "Samantha", "Joelle", "Evan",
+          "Nathan", "Tom", "Alex", "Aaron", "Kate", "Stephanie", "Serena", "Martha",
+          "Jamie", "Oliver", "Daniel", "Arthur", "Matilda", "Karen", "Catherine", "Lee",
+          "Gordon", "Isha", "Sangeeta", "Rishi", "Moira", "Tessa", "Fiona", "Female Google voice (US)",
+          "Female Google voice (UK)", "Male Google voice (UK)", "Zira", "David", "Mark", "Hazel",
+          "Susan", "George", "Catherine", "James", "Linda", "Richard", "Heera", "Ravi", "Sean",
+          "Female voice 1 (US)", "Female voice 2 (US)", "Female voice 3 (US)", "Female voice 4 (US)",
+          "Female voice 5 (US)", "Female voice 6 (US)", "Male voice 1 (US)", "Male voice 2 (US)",
+          "Male voice 3 (US)", "Female voice 1 (UK)", "Female voice 2 (UK)", "Female voice 3 (UK)",
+          "Female voice 4 (UK)", "Male voice 1 (UK)", "Male voice 2 (UK)", "Male voice 3 (UK)",
+          "Female voice 1 (Australia)", "Female voice 2 (Australia)", "Male voice 1 (Australia)",
+          "Male voice 2 (Australia)", "Male voice 3 (Australia)", "Female voice 1 (India)",
+          "Female voice 2 (India)", "Male voice 1 (India)", "Male voice 2 (India)"
+      ];
+
+      // Check if the browser supports speech synthesis
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "en-US"; // Set the language to English
+          utterance.pitch = 1;  // Set pitch (1 is normal)
+          utterance.rate = 1;   // Set rate (1 is normal)
+          utterance.volume = 1; // Set volume (1 is full)
+
+          // Get available voices and filter by 'en-US'
+          const voices = window.speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('en-US'));
+
+          // Find the first preferred voice that exists in the available voices list
+          const selectedVoice = voices.find(voice => preferredVoices.includes(voice.name));
+          const defaultVoice = voices.find(voice => voice.default);
+          console.log("selectedVoice: ", selectedVoice);
+          console.log("defaultVoice: ", defaultVoice);
+          console.log("voices[0]: ", voices[0]);
+
+          if (selectedVoice) {
+              utterance.voice = selectedVoice;
+              console.log("Selected Voice:", selectedVoice.name);
+          } else {
+              console.log("No preferred voice found, using default.");
+              // Fallback to a default voice if none found (optional)
+              utterance.voice = voices[0]; // Fallback to the first voice in the list
+          }
+
+          // Speak the utterance
+          window.speechSynthesis.speak(utterance);
+      }
+  }, [currentCard]);
 
   const handleResponseClick = () => {
     if (isBlurred) {
