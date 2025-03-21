@@ -89,7 +89,7 @@ export function SlidingMessages() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="relative min-h-[2rem] flex items-center">
+        <div className="relative min-h-[4rem] flex items-center">
           <p
             className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${
               isTransitioning ? "opacity-0" : "opacity-100"
