@@ -89,7 +89,7 @@ export default function HomePage() {
               </p>
             </CardContent>
           </Card>*/}
-          {/* Continue Learning */}
+          {/* Continue Learning
           <Link href={`/card`} className="block">
             <Card className="hover:shadow-lg transition-shadow border-t-4 border-green-500 h-full">
               <CardHeader>
@@ -110,7 +110,7 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
-          </Link>
+          </Link> */}
 
           {/* Pronunciation Tip
           <Card className="border-t-4 border-purple-500 col-span-full">
@@ -127,22 +127,6 @@ export default function HomePage() {
               <p className="text-sm text-gray-600">{pronunciationTip.explanation}</p>
             </CardContent>
           </Card>*/}
-
-          {/* Revision */}
-          <Link href="/revision" className="block">
-            <Card className="hover:shadow-lg transition-shadow border-t-4 border-yellow-500 h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center text-gray-900">
-                  <ArrowPathIcon className="w-6 h-6 mr-2 text-yellow-500" />
-                  Revision
-                </CardTitle>
-                <CardDescription>Review marked cards</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">{userProgression.getAllRevisionCards().size} cards marked for revision</p>
-              </CardContent>
-            </Card>
-          </Link>
 
           {/* All Buckets */}
             <div className="col-span-full">
@@ -207,6 +191,24 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             </div>
+
+
+
+          {/* Revision */}
+          <Link href="/revision" className="block">
+            <Card className="hover:shadow-lg transition-shadow border-t-4 border-yellow-500 h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-900">
+                  <ArrowPathIcon className="w-6 h-6 mr-2 text-yellow-500" />
+                  Revision
+                </CardTitle>
+                <CardDescription>Review all marked cards</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">{userProgression.getAllRevisionCards().size} cards marked for revision</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </main>
     </div>

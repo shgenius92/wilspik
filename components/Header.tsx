@@ -26,16 +26,15 @@ export function Header() {
   return (
     <header className="bg-white shadow">
       <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-        <Link href="/home" className="text-xl font-bold text-gray-900">
+        <Link href="/" className="text-xl font-bold text-gray-900">
           Wilspik
         </Link>
         <div className="flex items-center space-x-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-s text-gray-900">Documentations</span>
+          <Link href="/home" className="text-xl font-bold text-gray-900">
+              <Button variant="ghost" size="icon" aria-label="Login">
+                <HomeIcon className="h-5 w-5" />
+              </Button>
           </Link>
-          <Button variant="ghost" size="icon" aria-label="Login">
-            <UserIcon className="h-5 w-5" />
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Menu">

@@ -39,7 +39,7 @@ export function SlidingMessages() {
     if (!isPaused) {
       timer = setInterval(() => {
         nextMessage()
-      }, 5000)
+      }, 10000)
     }
     return () => clearInterval(timer)
   }, [isPaused, nextMessage])
@@ -55,14 +55,41 @@ export function SlidingMessages() {
           <div className="flex items-center">
             <LightBulbIcon className="w-6 h-6 mr-2" />
             <span>App Tips</span>
+            <span className="text-sm font-normal ml-2"> {currentMessageIndex + 1}/{messages.length}</span>
           </div>
           <span className="text-sm font-normal">
-            {currentMessageIndex + 1}/{messages.length}
+            <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={prevMessage}
+                aria-label="Previous tip"
+              >
+                <ChevronLeftIcon className="h-6 w-6" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={togglePause}
+                aria-label={isPaused ? "Resume" : "Pause"}
+              >
+                {isPaused ? <PlayIcon className="h-6 w-6" /> : <PauseIcon className="h-6 w-6" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={nextMessage}
+                aria-label="Next tip"
+              >
+                <ChevronRightIcon className="h-6 w-6" />
+              </Button>
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="relative min-h-[4rem] flex items-center">
+        <div className="relative min-h-[2rem] flex items-center">
           <p
             className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${
               isTransitioning ? "opacity-0" : "opacity-100"
@@ -71,34 +98,8 @@ export function SlidingMessages() {
             {messages[currentMessageIndex]}
           </p>
         </div>
-        <div className="flex justify-center mt-4 space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={prevMessage}
-            aria-label="Previous tip"
-          >
-            <ChevronLeftIcon className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={togglePause}
-            aria-label={isPaused ? "Resume" : "Pause"}
-          >
-            {isPaused ? <PlayIcon className="h-6 w-6" /> : <PauseIcon className="h-6 w-6" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={nextMessage}
-            aria-label="Next tip"
-          >
-            <ChevronRightIcon className="h-6 w-6" />
-          </Button>
+        <div className="flex justify-center space-x-2">
+
         </div>
       </CardContent>
     </Card>
