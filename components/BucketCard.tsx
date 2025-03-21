@@ -62,6 +62,7 @@ export function BucketCard({
   };
 
   return (
+    <div id={`bucket-${id}`}>
       <Card
                 className={cn(
                   "w-48 h-48 flex flex-col justify-between relative transition-all duration-300",
@@ -192,6 +193,7 @@ export function BucketCard({
           </div>
         </CardContent>
       </Card>
+    </div>
   )
 }
 

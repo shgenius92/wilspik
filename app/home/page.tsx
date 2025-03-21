@@ -30,10 +30,29 @@ export default function HomePage() {
     console.log("loadedUserProgression from home: ", loadedUserProgression);
     const initOrLoadedUserProgression = (loadedUserProgression) ? loadedUserProgression : userProgression;
     setUserProgression(initOrLoadedUserProgression);
-    UserProgression.saveToStorage(initOrLoadedUserProgression);
 
     setLoading(false);
   }, [])
+
+  // Scroll to center the current bucket when it changes
+  useEffect(() => {
+    if (!loading) {
+      // Force a re-render of the HorizontalScroller by toggling a key or prop
+      // This ensures the scroller updates when currentBucketId changes
+      const timeoutId = setTimeout(() => {
+        const scrollerContainer = document.getElementById("bucket-scroller-container")
+        if (scrollerContainer) {
+          // Force a reflow to ensure the scroller updates
+          scrollerContainer.style.display = "none"
+          // This causes a reflow
+          void scrollerContainer.offsetHeight
+          scrollerContainer.style.display = ""
+        }
+      }, 50)
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [userProgression, loading])
 
   if (loading) {
     return (
@@ -152,40 +171,44 @@ export default function HomePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <HorizontalScroller>
-                      {userProgression.progression.map((bucket) => (
-                        <div key={bucket.id} className="px-1">
-                          <BucketCard
-                            id={bucket.id}
-                            isUnlocked={true}
-                            totalCards={100}
-                            completedCards={bucket.seenCards.size}
-                            lastScore={bucket.lastScore}
-                            markedForRevision={bucket.revisionCards.size}
-                            isCompleted={bucket.isCompleted}
-                            isCurrentBucket={bucket.id == userProgression.currentBucketID}
-                            restartClickHandler={restartClickHandler}
-                            resumeClickHandler={resumeClickHandler}
-                          />
-                        </div>
-                      ))}
+                  {!loading && (
+                    <div id="bucket-scroller-container">
+                      <HorizontalScroller centerBucketId={userProgression.currentBucketID}>
+                        {userProgression.progression.map((bucket) => (
+                          <div key={bucket.id} className="px-1">
+                            <BucketCard
+                              id={bucket.id}
+                              isUnlocked={true}
+                              totalCards={100}
+                              completedCards={bucket.seenCards.size}
+                              lastScore={bucket.lastScore}
+                              markedForRevision={bucket.revisionCards.size}
+                              isCompleted={bucket.isCompleted}
+                              isCurrentBucket={bucket.id == userProgression.currentBucketID}
+                              restartClickHandler={restartClickHandler}
+                              resumeClickHandler={resumeClickHandler}
+                            />
+                          </div>
+                        ))}
 
-                      {/* Remaining buckets */}
-                      {Array.from({ length: 34 - userProgression.progression.length}, (_, index) => index + userProgression.progression.length + 1).map((bucketID) => (
-                        <div key={bucketID} className="px-1">
-                          <BucketCard
-                            id={bucketID}
-                            isUnlocked={false}
-                            totalCards={100}
-                            completedCards={0}
-                            isCompleted={false}
-                            isCurrentBucket={false}
-                            restartClickHandler={restartClickHandler}
-                            resumeClickHandler={resumeClickHandler}
-                          />
-                        </div>
-                      ))}
-                    </HorizontalScroller>
+                        {/* Remaining buckets */}
+                        {Array.from({ length: 34 - userProgression.progression.length}, (_, index) => index + userProgression.progression.length + 1).map((bucketID) => (
+                          <div key={bucketID} className="px-1">
+                            <BucketCard
+                              id={bucketID}
+                              isUnlocked={false}
+                              totalCards={100}
+                              completedCards={0}
+                              isCompleted={false}
+                              isCurrentBucket={false}
+                              restartClickHandler={restartClickHandler}
+                              resumeClickHandler={resumeClickHandler}
+                            />
+                          </div>
+                        ))}
+                      </HorizontalScroller>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
