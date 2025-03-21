@@ -112,7 +112,7 @@ export default function PresentationPage() {
             </nav>
 
             <Button asChild className="bg-theme-primary hover:bg-theme-secondary text-white">
-              <Link href="/home">Get Started</Link>
+              <Link href="/home">Get Started (Free)</Link>
             </Button>
           </div>
         </div>
